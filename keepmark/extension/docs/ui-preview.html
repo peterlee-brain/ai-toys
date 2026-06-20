@@ -1,0 +1,2016 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>KeepMark · 留标 — Interactive Preview</title>
+    <style>
+      :root {
+        --era-bg: #ffffff;
+        --era-bg-muted: #f6f7f9;
+        --era-bg-hover: #eef1f5;
+        --era-border: #e2e6ed;
+        --era-text: #1a1d23;
+        --era-text-secondary: #5c6570;
+        --era-text-tertiary: #8b939e;
+        --era-primary: #2563eb;
+        --era-primary-hover: #1d4ed8;
+        --era-primary-soft: #eff6ff;
+        --era-success: #059669;
+        --era-warning: #d97706;
+        --era-error: #dc2626;
+        --era-highlight: #fef08a;
+        --era-font: system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC",
+          "Microsoft YaHei", sans-serif;
+        --era-shadow: 0 4px 24px rgba(15, 23, 42, 0.12),
+          0 0 1px rgba(15, 23, 42, 0.08);
+        --era-radius-sm: 6px;
+        --era-radius-md: 10px;
+        --era-radius-lg: 14px;
+        --era-radius-full: 9999px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: var(--era-font);
+        background: #e8ecf1;
+        color: var(--era-text);
+        min-height: 100vh;
+      }
+
+      body.era-bar-disabled ::selection {
+        background: rgba(37, 99, 235, 0.2);
+      }
+
+      .page-header {
+        background: var(--era-text);
+        color: #fff;
+        padding: 16px 24px;
+      }
+
+      .page-header h1 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+      }
+
+      .page-header p {
+        margin: 6px 0 0;
+        font-size: 13px;
+        opacity: 0.75;
+      }
+
+      .hint-bar {
+        background: var(--era-primary-soft);
+        border-bottom: 1px solid #bfdbfe;
+        padding: 10px 24px;
+        font-size: 13px;
+        color: #1e40af;
+      }
+
+      .hint-bar kbd {
+        display: inline-block;
+        padding: 1px 6px;
+        border: 1px solid #93c5fd;
+        border-radius: 4px;
+        background: #fff;
+        font-size: 11px;
+        font-family: inherit;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: 1fr 360px;
+        gap: 24px;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+
+      @media (max-width: 900px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .section-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--era-text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin: 0 0 12px;
+      }
+
+      .article-mock {
+        background: #fff;
+        border-radius: var(--era-radius-lg);
+        padding: 40px 48px;
+        box-shadow: var(--era-shadow);
+        min-height: 480px;
+        user-select: text;
+        cursor: text;
+      }
+
+      .article-mock h2 {
+        margin: 0 0 16px;
+        font-size: 22px;
+        line-height: 1.4;
+      }
+
+      .article-mock p {
+        margin: 0 0 14px;
+        font-size: 16px;
+        line-height: 1.75;
+        color: #333;
+      }
+
+      .article-tip {
+        margin-top: 24px;
+        padding: 12px 14px;
+        background: var(--era-bg-muted);
+        border-radius: var(--era-radius-sm);
+        font-size: 13px;
+        color: var(--era-text-secondary);
+        line-height: 1.6;
+      }
+
+      /* ── Floating layer ── */
+      .era-layer {
+        position: fixed;
+        z-index: 2147483644;
+        pointer-events: none;
+      }
+
+      .era-layer > * {
+        pointer-events: auto;
+      }
+
+      .era-hidden {
+        display: none !important;
+      }
+
+      .selection-bar {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 36px;
+        padding: 8px 10px;
+        background: var(--era-bg);
+        border: 1px solid var(--era-border);
+        border-radius: var(--era-radius-full);
+        box-shadow: var(--era-shadow);
+        animation: era-in 120ms ease-out;
+        white-space: nowrap;
+      }
+
+      .selection-preview {
+        font-size: 12px;
+        color: var(--era-text-secondary);
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        padding-right: 8px;
+        border-right: 1px solid var(--era-border);
+      }
+
+      .btn {
+        height: 28px;
+        padding: 0 12px;
+        border-radius: var(--era-radius-sm);
+        font-size: 12px;
+        font-family: inherit;
+        cursor: pointer;
+        border: none;
+        transition: background 80ms, transform 80ms, opacity 80ms;
+      }
+
+      .btn:active:not(:disabled) {
+        transform: scale(0.98);
+      }
+
+      .btn:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+
+      .btn-primary {
+        background: var(--era-primary);
+        color: #fff;
+      }
+
+      .btn-primary:hover:not(:disabled) {
+        background: var(--era-primary-hover);
+      }
+
+      .btn-outline {
+        background: var(--era-bg);
+        color: var(--era-text);
+        border: 1px solid var(--era-border);
+      }
+
+      .btn-outline:hover:not(:disabled) {
+        background: var(--era-bg-hover);
+      }
+
+      .btn-success-flash {
+        background: var(--era-success) !important;
+      }
+
+      .btn-icon {
+        width: 28px;
+        height: 28px;
+        padding: 0;
+        background: transparent;
+        color: var(--era-text-tertiary);
+        font-size: 16px;
+        line-height: 1;
+      }
+
+      .btn-icon:hover {
+        background: var(--era-bg-hover);
+        color: var(--era-text);
+      }
+
+      .popover {
+        width: 300px;
+        max-height: 240px;
+        background: #ffffff;
+        border: 1px solid var(--era-border);
+        border-radius: var(--era-radius-md);
+        box-shadow: var(--era-shadow), 0 0 0 1px rgba(255, 255, 255, 0.8);
+        overflow: hidden;
+        animation: era-in 120ms ease-out forwards;
+        isolation: isolate;
+        opacity: 1;
+      }
+
+      .popover-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        min-height: 48px;
+        padding: 8px 10px 8px 12px;
+        border-bottom: 1px solid var(--era-border);
+        background: #ffffff;
+      }
+
+      .popover-header .word-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0;
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .popover-actions {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+      }
+
+      .popover-actions .btn {
+        height: 32px;
+        padding: 0 12px;
+        font-size: 13px;
+      }
+
+      .popover-actions .btn-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 18px;
+      }
+
+      .btn-save-star {
+        min-width: 32px;
+        padding: 0 10px !important;
+        font-size: 17px;
+        line-height: 1;
+        letter-spacing: 0;
+      }
+
+      .btn-save-star.saved {
+        color: var(--era-warning);
+        border-color: #fcd34d;
+        background: #fffbeb;
+      }
+
+      .btn-save-star.saved:hover:not(:disabled) {
+        background: #fef3c7;
+      }
+
+      .popover-header-legacy {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 40px;
+        padding: 0 12px;
+        border-bottom: 1px solid var(--era-border);
+      }
+
+      .popover-header-legacy span {
+        font-size: 12px;
+        color: var(--era-text-secondary);
+        font-weight: 600;
+      }
+
+      .popover-header button {
+        background: none;
+        border: none;
+        color: var(--era-primary);
+        font-size: 12px;
+        cursor: pointer;
+        font-family: inherit;
+      }
+
+      .popover-body {
+        padding: 10px 12px 12px;
+        overflow-y: auto;
+        max-height: 180px;
+        min-height: 48px;
+        background: #ffffff;
+      }
+
+      .popover-body .word-body-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0 0 6px;
+      }
+
+      .pos-tag {
+        display: inline-block;
+        font-size: 11px;
+        color: var(--era-primary);
+        background: var(--era-primary-soft);
+        padding: 2px 6px;
+        border-radius: 4px;
+        margin-right: 6px;
+      }
+
+      .meaning {
+        font-size: 14px;
+        line-height: 22px;
+        margin: 0 0 12px;
+      }
+
+      .divider {
+        height: 1px;
+        background: var(--era-border);
+        margin: 10px 0;
+      }
+
+      .meta-label {
+        font-size: 11px;
+        color: var(--era-text-secondary);
+        font-weight: 600;
+        margin: 0 0 4px;
+      }
+
+      .meta-text {
+        font-size: 12px;
+        color: var(--era-text-secondary);
+        line-height: 18px;
+        margin: 0;
+      }
+
+      .context-box {
+        background: var(--era-bg-muted);
+        padding: 10px 12px;
+        border-radius: var(--era-radius-sm);
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--era-text-secondary);
+      }
+
+      .context-box em {
+        background: var(--era-highlight);
+        font-style: normal;
+        padding: 0 2px;
+      }
+
+      .btn-ghost {
+        background: none;
+        border: none;
+        color: var(--era-text-secondary);
+        font-size: 12px;
+        cursor: pointer;
+        font-family: inherit;
+      }
+
+      .btn-ghost:hover {
+        color: var(--era-text);
+      }
+
+      .skeleton {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .skeleton-line {
+        height: 12px;
+        background: linear-gradient(
+          90deg,
+          #e2e6ed 25%,
+          #eef1f5 50%,
+          #e2e6ed 75%
+        );
+        background-size: 200% 100%;
+        border-radius: 4px;
+        animation: shimmer 1s linear infinite;
+      }
+
+      .skeleton-line.w60 {
+        width: 60%;
+      }
+
+      .skeleton-line.w80 {
+        width: 80%;
+      }
+
+      .skeleton-line.w100 {
+        width: 100%;
+      }
+
+      .error-box {
+        color: var(--era-error);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      /* ── Toast ── */
+      .toast-wrap {
+        position: fixed;
+        left: 50%;
+        bottom: 24px;
+        transform: translateX(-50%);
+        z-index: 2147483646;
+        pointer-events: none;
+      }
+
+      .toast {
+        display: inline-flex;
+        align-items: center;
+        height: 40px;
+        padding: 0 16px;
+        background: var(--era-text);
+        color: #fff;
+        font-size: 12px;
+        border-radius: var(--era-radius-full);
+        box-shadow: var(--era-shadow);
+        animation: toast-in 120ms ease-out;
+      }
+
+      .toast.warning svg {
+        color: var(--era-warning);
+      }
+
+      .toast svg {
+        margin-right: 8px;
+        color: var(--era-success);
+        flex-shrink: 0;
+      }
+
+      .toast.era-hidden {
+        display: none;
+      }
+
+      /* ── Side Panel ── */
+      .side-panel {
+        background: var(--era-bg);
+        border: 1px solid var(--era-border);
+        border-radius: var(--era-radius-lg);
+        box-shadow: var(--era-shadow);
+        overflow: hidden;
+        position: sticky;
+        top: 24px;
+        transition: box-shadow 200ms, border-color 200ms;
+      }
+
+      .side-panel.focused {
+        border-color: var(--era-primary);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15), var(--era-shadow);
+      }
+
+      .side-panel-header {
+        padding: 16px;
+        font-size: 14px;
+        font-weight: 600;
+        border-bottom: 1px solid var(--era-border);
+      }
+
+      .tabs {
+        display: flex;
+        border-bottom: 1px solid var(--era-border);
+      }
+
+      .tab {
+        flex: 1;
+        padding: 10px 8px;
+        text-align: center;
+        font-size: 13px;
+        color: var(--era-text-secondary);
+        background: none;
+        border: none;
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+        font-family: inherit;
+      }
+
+      .tab.active {
+        color: var(--era-primary);
+        border-bottom-color: var(--era-primary);
+        font-weight: 600;
+      }
+
+      .side-body {
+        padding: 16px;
+        min-height: 360px;
+        max-height: 680px;
+        overflow-y: auto;
+      }
+
+      .tab-panel {
+        display: none;
+      }
+
+      .tab-panel.active {
+        display: block;
+      }
+
+      .quote-card {
+        background: var(--era-bg-muted);
+        padding: 12px;
+        border-radius: var(--era-radius-sm);
+        font-size: 13px;
+        line-height: 20px;
+        margin-bottom: 16px;
+      }
+
+      .quote-card strong {
+        background: var(--era-primary-soft);
+        color: var(--era-primary);
+        font-weight: 600;
+      }
+
+      .block-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--era-text-secondary);
+        margin: 16px 0 8px;
+      }
+
+      .block-title:first-child {
+        margin-top: 0;
+      }
+
+      .bullet-list {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 14px;
+        line-height: 22px;
+      }
+
+      .hint-box {
+        background: var(--era-bg-muted);
+        padding: 10px 12px;
+        border-radius: var(--era-radius-sm);
+        font-size: 13px;
+        line-height: 20px;
+        color: var(--era-text-secondary);
+      }
+
+      .translation-box {
+        margin: 0 0 4px;
+        padding: 12px;
+        background: var(--era-primary-soft);
+        border-radius: var(--era-radius-sm);
+        font-size: 14px;
+        line-height: 22px;
+      }
+
+      .vocab-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-bottom: 4px;
+      }
+
+      .vocab-card {
+        padding: 10px;
+        border: 1px solid var(--era-border);
+        border-radius: var(--era-radius-sm);
+        background: #fff;
+      }
+
+      .vocab-text {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--era-primary);
+        margin-bottom: 4px;
+      }
+
+      .vocab-translation {
+        font-size: 13px;
+        line-height: 20px;
+      }
+
+      .vocab-note {
+        margin-top: 6px;
+        font-size: 11px;
+        line-height: 16px;
+        color: var(--era-text-tertiary);
+      }
+
+      .grammar-table {
+        border: 1px solid var(--era-border);
+        border-radius: var(--era-radius-sm);
+        overflow: hidden;
+        margin-bottom: 8px;
+      }
+
+      .grammar-row {
+        display: grid;
+        grid-template-columns: 72px 1fr;
+        gap: 8px;
+        padding: 8px 10px;
+        font-size: 13px;
+        line-height: 20px;
+        border-bottom: 1px solid var(--era-border);
+      }
+
+      .grammar-row:last-child {
+        border-bottom: none;
+      }
+
+      .grammar-row:nth-child(even) {
+        background: var(--era-bg-muted);
+      }
+
+      .grammar-label {
+        font-weight: 600;
+        color: var(--era-text-secondary);
+      }
+
+      .why-box {
+        padding: 10px 12px;
+        border-radius: var(--era-radius-sm);
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        font-size: 13px;
+        line-height: 20px;
+        color: #92400e;
+      }
+
+      .similar-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .similar-card {
+        padding: 12px;
+        border: 1px solid var(--era-border);
+        border-radius: var(--era-radius-sm);
+        background: var(--era-bg-muted);
+      }
+
+      .similar-index {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--era-text-secondary);
+        margin-bottom: 6px;
+      }
+
+      .similar-en {
+        margin: 0 0 8px;
+        font-size: 13px;
+        line-height: 20px;
+      }
+
+      .similar-zh {
+        margin: 0;
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--era-text-secondary);
+      }
+
+      .demo-load-btn {
+        margin-top: 12px;
+        width: 100%;
+      }
+
+      .mastery {
+        display: flex;
+        gap: 8px;
+        margin-top: 16px;
+      }
+
+      .pill {
+        flex: 1;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        border: 1px solid var(--era-border);
+        border-radius: var(--era-radius-sm);
+        cursor: pointer;
+        background: var(--era-bg);
+      }
+
+      .pill.active {
+        border-color: var(--era-primary);
+        background: var(--era-primary-soft);
+        color: var(--era-primary);
+        font-weight: 600;
+      }
+
+      .side-footer {
+        padding: 12px 16px;
+        border-top: 1px solid var(--era-border);
+      }
+
+      .side-footer .btn-primary {
+        width: 100%;
+        height: 36px;
+        font-size: 14px;
+      }
+
+      .session-header,
+      .bank-header {
+        font-size: 12px;
+        color: var(--era-text-secondary);
+        margin-bottom: 10px;
+        font-weight: 600;
+      }
+
+      .word-row,
+      .session-item,
+      .word-card {
+        border: 1px solid var(--era-border);
+        border-radius: var(--era-radius-sm);
+        margin-bottom: 6px;
+        transition: background 80ms, border-color 80ms;
+        overflow: hidden;
+      }
+
+      .word-row {
+        display: block;
+        cursor: pointer;
+        background: #ffffff;
+      }
+
+      .word-row-main {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+      }
+
+      .word-row-chevron {
+        flex-shrink: 0;
+        width: 16px;
+        font-size: 12px;
+        color: var(--era-text-tertiary);
+        transition: transform 120ms ease-out;
+      }
+
+      .word-row.expanded .word-row-chevron {
+        transform: rotate(90deg);
+        color: var(--era-primary);
+      }
+
+      .word-row.active {
+        border-color: var(--era-primary);
+      }
+
+      .word-row.active .word-row-main {
+        background: var(--era-primary-soft);
+      }
+
+      .word-row:hover .word-row-main {
+        background: var(--era-bg-muted);
+      }
+
+      .word-row.active:hover .word-row-main {
+        background: var(--era-primary-soft);
+      }
+
+      .word-row.expanded {
+        border-color: var(--era-primary);
+        box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.12);
+      }
+
+      .word-row-detail {
+        display: none;
+        padding: 0 10px 10px 34px;
+        background: #ffffff;
+        border-top: 1px dashed var(--era-border);
+      }
+
+      .word-row.expanded .word-row-detail {
+        display: block;
+        animation: era-in 120ms ease-out forwards;
+      }
+
+      .word-row-detail-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--era-text-secondary);
+        margin: 8px 0 4px;
+      }
+
+      .word-row-detail-text {
+        font-size: 13px;
+        line-height: 20px;
+        color: var(--era-text);
+        margin: 0;
+      }
+
+      .word-row-detail-meta {
+        font-size: 12px;
+        line-height: 18px;
+        color: var(--era-text-secondary);
+        margin: 8px 0 0;
+      }
+
+      .session-item,
+      .word-card {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        cursor: pointer;
+        padding: 8px 10px;
+      }
+
+      .session-item:hover,
+      .word-card:hover {
+        background: var(--era-bg-muted);
+      }
+
+      .word-row-lemma {
+        font-weight: 600;
+        font-size: 14px;
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .word-row-pos {
+        font-size: 10px;
+        color: var(--era-primary);
+        min-width: 32px;
+        flex-shrink: 0;
+        text-align: center;
+      }
+
+      .word-row-count {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--era-text-tertiary);
+        min-width: 44px;
+        text-align: center;
+        flex-shrink: 0;
+      }
+
+      .word-row-star {
+        min-width: 32px;
+        height: 32px;
+        padding: 0;
+        font-size: 17px;
+        line-height: 1;
+        flex-shrink: 0;
+      }
+
+      .session-item-top,
+      .word-card-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4px;
+      }
+
+      .session-word,
+      .word-lemma {
+        font-weight: 600;
+        font-size: 14px;
+      }
+
+      .session-time {
+        font-size: 11px;
+        color: var(--era-text-tertiary);
+      }
+
+      .session-meaning,
+      .word-meaning {
+        font-size: 12px;
+        color: var(--era-text-secondary);
+      }
+
+      .badge {
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: var(--era-primary-soft);
+        color: var(--era-primary);
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 40px 16px;
+        color: var(--era-text-tertiary);
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      .empty-icon {
+        font-size: 32px;
+        margin-bottom: 8px;
+      }
+
+      /* ── Popup ── */
+      .popup-section {
+        margin-top: 8px;
+      }
+
+      .popup-mock {
+        width: 300px;
+        background: var(--era-bg);
+        border: 1px solid var(--era-border);
+        border-radius: var(--era-radius-md);
+        box-shadow: var(--era-shadow);
+        padding: 16px;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      .stat-num {
+        font-size: 18px;
+        font-weight: 700;
+      }
+
+      .stat-label {
+        font-size: 12px;
+        color: var(--era-text-secondary);
+      }
+
+      .popup-mock .btn-wide {
+        width: 100%;
+        height: 36px;
+        font-size: 14px;
+        margin-top: 8px;
+      }
+
+      .toggle-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 16px;
+        font-size: 12px;
+      }
+
+      .toggle {
+        width: 36px;
+        height: 20px;
+        background: #cbd5e1;
+        border-radius: var(--era-radius-full);
+        position: relative;
+        cursor: pointer;
+        transition: background 120ms;
+        border: none;
+        padding: 0;
+      }
+
+      .toggle.on {
+        background: var(--era-primary);
+      }
+
+      .toggle::after {
+        content: "";
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        background: #fff;
+        border-radius: 50%;
+        top: 2px;
+        left: 2px;
+        transition: left 120ms;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+      }
+
+      .toggle.on::after {
+        left: 18px;
+      }
+
+      .grammar-stream .stream-line {
+        opacity: 0;
+        animation: stream-in 300ms ease-out forwards;
+      }
+
+      .grammar-stream .stream-line:nth-child(1) {
+        animation-delay: 0ms;
+      }
+      .grammar-stream .stream-line:nth-child(2) {
+        animation-delay: 120ms;
+      }
+      .grammar-stream .stream-line:nth-child(3) {
+        animation-delay: 240ms;
+      }
+      .grammar-stream .stream-line:nth-child(4) {
+        animation-delay: 360ms;
+      }
+      .grammar-stream .stream-line:nth-child(n + 6) {
+        animation-delay: 600ms;
+      }
+
+      @keyframes era-in {
+        from {
+          opacity: 0;
+          transform: translateY(4px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes toast-in {
+        from {
+          opacity: 0;
+          transform: translateY(8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes shimmer {
+        0% {
+          background-position: 200% 0;
+        }
+        100% {
+          background-position: -200% 0;
+        }
+      }
+
+      @keyframes stream-in {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="page-header">
+      <h1>KeepMark · 留标 — Interactive Preview</h1>
+      <p>拖选英文 → 自动弹出翻译，无需再点按钮</p>
+    </header>
+
+    <div class="hint-bar">
+      选中即译 · <kbd>Alt+G</kbd> 学习 · <kbd>Alt+S</kbd> 保存 ·
+      <kbd>Esc</kbd> 关闭 · 试试 <strong>volatile</strong> 或
+      <strong>notwithstanding</strong>
+    </div>
+
+    <div id="eraPopoverLayer" class="era-layer era-hidden">
+      <div id="popover" class="popover">
+        <div class="popover-header">
+          <p id="popoverWord" class="word-title">—</p>
+          <div class="popover-actions">
+            <button id="btnGrammar" class="btn btn-outline" type="button">
+              学习
+            </button>
+            <button
+              id="btnSaveHeader"
+              class="btn btn-outline btn-save-star"
+              type="button"
+              title="保存到词库"
+              aria-label="保存到词库"
+            >
+              ☆
+            </button>
+            <button id="btnClose" class="btn btn-icon" type="button" title="关闭">
+              ×
+            </button>
+          </div>
+        </div>
+        <div id="popoverBody" class="popover-body"></div>
+      </div>
+    </div>
+
+    <div class="toast-wrap">
+      <div id="toast" class="toast era-hidden">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path
+            d="M13 4L6 11L3 8"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+        <span id="toastText"></span>
+      </div>
+    </div>
+
+    <div class="layout">
+      <main>
+        <h3 class="section-title">阅读页 · 拖选体验</h3>
+        <article id="article" class="article-mock">
+          <h2>The Future of Remote Work</h2>
+          <p id="para1">
+            Although many investors understand that patience is essential, they
+            often make impulsive decisions when the market becomes volatile,
+            which can seriously damage their long-term returns.
+          </p>
+          <p id="para2">
+            The decision, notwithstanding the risks, was final. Many companies
+            have reconsidered their policies amid rapid proliferation of hybrid
+            arrangements.
+          </p>
+          <p>
+            Employees often negotiate flexibility, while employers weigh
+            productivity against collaboration.
+          </p>
+          <div class="article-tip">
+            👆 拖选任意英文：松开后约 0.3 秒 **自动显示翻译**。选中整句后点「学习」或
+            <kbd>Alt+G</kbd> 查看 Kimi 结构化学习面板。
+          </div>
+          <button id="btnDemoLearning" class="btn btn-outline demo-load-btn" type="button">
+            预览 Kimi 学习面板（投资者例句）
+          </button>
+        </article>
+
+        <section class="popup-section">
+          <h3 class="section-title">Popup · 工具栏弹窗</h3>
+          <div class="popup-mock">
+            <div class="stats">
+              <div>
+                <div id="statNew" class="stat-num">0</div>
+                <div class="stat-label">今日新增生词</div>
+              </div>
+              <div>
+                <div id="statReview" class="stat-num">0</div>
+                <div class="stat-label">待复习</div>
+              </div>
+            </div>
+            <button id="btnOpenPanel" class="btn btn-primary btn-wide" type="button">
+              打开阅读面板
+            </button>
+            <button id="btnScrollPanel" class="btn btn-outline btn-wide" type="button">
+              滚动到 Side Panel
+            </button>
+            <div class="toggle-row">
+              <span>选中即翻译</span>
+              <button
+                id="toggleBar"
+                class="toggle on"
+                type="button"
+                aria-label="选中即翻译"
+              ></button>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <aside>
+        <h3 class="section-title">Side Panel</h3>
+        <div id="sidePanel" class="side-panel">
+          <div class="side-panel-header">KeepMark · 留标</div>
+          <div class="tabs">
+            <button class="tab active" data-tab="grammar" type="button">
+              学习
+            </button>
+            <button class="tab" data-tab="bank" type="button">词库</button>
+          </div>
+          <div class="side-body">
+            <div id="panelGrammar" class="tab-panel active">
+              <div id="grammarEmpty" class="empty-state">
+                <div class="empty-icon">📖</div>
+                在文章中选中句子后<br />点击「学习」或 <kbd>Alt+G</kbd>
+              </div>
+              <div id="grammarContent" class="era-hidden"></div>
+            </div>
+            <div id="panelBank" class="tab-panel">
+              <div id="bankHeader" class="bank-header era-hidden"></div>
+              <div id="bankList"></div>
+              <div id="bankEmpty" class="empty-state">
+                <div class="empty-icon">📚</div>
+              打开「学习」面板后<br />此处展示 Kimi 推荐的重点词汇<br /><span style="font-size:12px;color:var(--era-text-tertiary)">点击 ☆ 留标你想学的词或短语</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <script>
+      const DICT = {
+        notwithstanding: {
+          pos: "adv.",
+          meaning: "尽管；虽然（正式用语，常置于句中或句首，相当于 in spite of）",
+          collocation: "notwithstanding the fact that …",
+        },
+        proliferation: {
+          pos: "n.",
+          meaning: "激增；扩散；迅速增加（常用于政策、技术、武器等语境）",
+          collocation: "proliferation of nuclear weapons",
+        },
+        hybrid: {
+          pos: "adj.",
+          meaning: "混合的；杂交的",
+          collocation: "hybrid work model",
+        },
+        flexibility: {
+          pos: "n.",
+          meaning: "灵活性；弹性",
+          collocation: "flexibility in scheduling",
+        },
+        productivity: {
+          pos: "n.",
+          meaning: "生产力；效率",
+          collocation: "boost productivity",
+        },
+        collaboration: {
+          pos: "n.",
+          meaning: "合作；协作",
+          collocation: "cross-team collaboration",
+        },
+        uncertainty: {
+          pos: "n.",
+          meaning: "不确定性",
+          collocation: "economic uncertainty",
+        },
+        arrangements: {
+          pos: "n.",
+          meaning: "安排；布置",
+          collocation: "make arrangements for",
+        },
+        decision: { pos: "n.", meaning: "决定；决策" },
+        risks: { pos: "n.", meaning: "风险" },
+        final: { pos: "adj.", meaning: "最终的" },
+        many: { pos: "adj.", meaning: "许多的" },
+        companies: { pos: "n.", meaning: "公司" },
+        policies: { pos: "n.", meaning: "政策" },
+        rapid: { pos: "adj.", meaning: "迅速的" },
+        the: { pos: "art.", meaning: "这；那" },
+        was: { pos: "v.", meaning: "是（过去式）" },
+        of: { pos: "prep.", meaning: "…的" },
+        amid: { pos: "prep.", meaning: "在…中" },
+        investor: { pos: "n.", meaning: "投资者" },
+        investors: { pos: "n.", meaning: "投资者（复数）" },
+        understand: { pos: "v.", meaning: "理解；明白" },
+        patience: { pos: "n.", meaning: "耐心" },
+        essential: { pos: "adj.", meaning: "至关重要的" },
+        impulsive: { pos: "adj.", meaning: "冲动的" },
+        volatile: { pos: "adj.", meaning: "波动剧烈的；不稳定的" },
+        returns: { pos: "n.", meaning: "回报；收益" },
+        damage: { pos: "v.", meaning: "损害" },
+        decisions: { pos: "n.", meaning: "决定；决策" },
+        market: { pos: "n.", meaning: "市场" },
+        although: { pos: "conj.", meaning: "虽然；尽管" },
+        when: { pos: "conj.", meaning: "当…时" },
+        which: { pos: "pron.", meaning: "哪一个；引导从句" },
+        long: { pos: "adj.", meaning: "长期的" },
+        term: { pos: "n.", meaning: "期限；术语" },
+      };
+
+      const state = {
+        selection: "",
+        sentence: "",
+        contextBefore: "",
+        contextAfter: "",
+        autoTranslate: true,
+        popoverOpen: false,
+        lastRequestKey: "",
+        grammarReady: false,
+        vocabulary: [],
+        bank: {},
+        markedLemmas: new Set(),
+        stats: { new: 0, review: 0 },
+        savedKeys: new Set(),
+        expandedBankLemma: "",
+      };
+
+      let debounceTimer = null;
+      let toastTimer = null;
+      let translateTimer = null;
+      let lastRect = null;
+
+      const article = document.getElementById("article");
+      const eraPopoverLayer = document.getElementById("eraPopoverLayer");
+      const popoverWord = document.getElementById("popoverWord");
+      const popoverBody = document.getElementById("popoverBody");
+      const btnSaveHeader = document.getElementById("btnSaveHeader");
+      const toast = document.getElementById("toast");
+      const toastText = document.getElementById("toastText");
+      const sidePanel = document.getElementById("sidePanel");
+      const grammarEmpty = document.getElementById("grammarEmpty");
+      const grammarContent = document.getElementById("grammarContent");
+      const bankHeader = document.getElementById("bankHeader");
+      const bankList = document.getElementById("bankList");
+      const bankEmpty = document.getElementById("bankEmpty");
+
+      function normalizeWord(text) {
+        return text.trim().toLowerCase().replace(/^[^a-z]+|[^a-z]+$/gi, "");
+      }
+
+      function vocabLemma(text) {
+        return text.trim().toLowerCase();
+      }
+
+      function isLemmaSaved(lemma) {
+        if (!state.sentence) return false;
+        return state.savedKeys.has(`${lemma}::${state.sentence.slice(0, 80)}`);
+      }
+
+      function extractSentence(text, articleEl) {
+        const full = articleEl.innerText.replace(/\s+/g, " ");
+        const idx = full.toLowerCase().indexOf(text.toLowerCase());
+        if (idx === -1) return text;
+        let start = idx;
+        let end = idx + text.length;
+        while (start > 0 && !/[.!?]/.test(full[start - 1])) start--;
+        if (start > 0 && /[.!?]/.test(full[start - 1])) start++;
+        while (start < full.length && full[start] === " ") start++;
+        while (end < full.length && !/[.!?]/.test(full[end])) end++;
+        if (end < full.length) end++;
+        return full.slice(start, end).trim();
+      }
+
+      function getContext(text, articleEl) {
+        const full = articleEl.innerText.replace(/\s+/g, " ");
+        const idx = full.toLowerCase().indexOf(text.toLowerCase());
+        if (idx === -1) return { before: "…", after: "…" };
+        const before = full.slice(Math.max(0, idx - 60), idx);
+        const after = full.slice(idx + text.length, idx + text.length + 60);
+        return { before: "…" + before, after: after + "…" };
+      }
+
+      function lookupEntry(text) {
+        const word = normalizeWord(text);
+        if (DICT[word]) return { word, ...DICT[word] };
+        const isSentence = text.trim().includes(" ") || text.length > 20;
+        return {
+          word: text.trim(),
+          pos: isSentence ? "sentence" : "word",
+          meaning: isSentence
+            ? "（演示）整句翻译：" + mockSentenceTranslation(text)
+            : "（演示）暂无词典条目，可保存到词库",
+          collocation: isSentence ? null : "—",
+        };
+      }
+
+      function mockSentenceTranslation(text) {
+        if (
+          text.toLowerCase().includes("investor") ||
+          text.toLowerCase().includes("volatile")
+        ) {
+          return "尽管许多投资者明白耐心至关重要，但当市场变得波动剧烈时，他们往往会做出冲动决策，而这可能严重损害其长期回报。";
+        }
+        if (text.toLowerCase().includes("notwithstanding")) {
+          return "尽管存在风险，该决定仍是最终决定。";
+        }
+        if (text.toLowerCase().includes("proliferation")) {
+          return "许多公司在混合办公模式迅速激增的背景下重新考虑了其政策。";
+        }
+        return "这是选中句子的中文释义演示。";
+      }
+
+      const INVESTOR_SENTENCE =
+        "Although many investors understand that patience is essential, they often make impulsive decisions when the market becomes volatile, which can seriously damage their long-term returns.";
+
+      const MOCK_LEARNING = {
+        investor: {
+          translation:
+            "尽管许多投资者明白耐心至关重要，但当市场变得波动剧烈时，他们往往会做出冲动决策，而这可能严重损害其长期回报。",
+          vocabulary: [
+            {
+              text: "investor",
+              kind: "n.",
+              occurrence_count: 12,
+              translation: "投资者",
+              note: "可数名词，financial context 高频",
+            },
+            {
+              text: "patience is essential",
+              kind: "短语",
+              occurrence_count: 1,
+              translation: "耐心至关重要",
+              note: "主系表 + 形容词，常见论述句型",
+            },
+            {
+              text: "impulsive decisions",
+              kind: "搭配",
+              occurrence_count: 3,
+              translation: "冲动决策",
+              note: "形容词 + 名词搭配",
+            },
+            {
+              text: "volatile",
+              kind: "adj.",
+              occurrence_count: 5,
+              translation: "波动剧烈的；不稳定的",
+              note: "形容市场、价格",
+            },
+            {
+              text: "long-term returns",
+              kind: "搭配",
+              occurrence_count: 2,
+              translation: "长期回报",
+              note: "金融术语，returns 常用复数",
+            },
+            {
+              text: "make decisions",
+              kind: "搭配",
+              occurrence_count: 8,
+              translation: "做出决定",
+              note: "动词 + 名词固定搭配",
+            },
+          ],
+          grammar: {
+            main_clause: "they often make impulsive decisions",
+            clauses: [
+              "Although many investors understand that patience is essential（让步状语从句）",
+              "when the market becomes volatile（时间状语从句）",
+              "which can seriously damage their long-term returns（非限制性定语从句）",
+            ],
+            subject: "they（指代 investors）",
+            predicate: "often make",
+            object: "impulsive decisions",
+            modifiers: [
+              "Although…essential 置于句首，表示让步",
+              "when…volatile 说明冲动决策发生的条件",
+              "which…returns 补充说明后果",
+            ],
+            details: [
+              "时态：一般现在时，描述普遍现象",
+              "understand 后接 that 引导的宾语从句",
+              "become + 形容词（系表结构）",
+            ],
+          },
+          why_written:
+            "典型「让步—行为—后果」论述结构：先承认理性共识（耐心重要），再指出实际偏差（波动时冲动），最后用 which 从句点明代价。常见于财经评论与投资者教育，逻辑清晰、说服力强。",
+          similar_sentences: [
+            {
+              english:
+                "Although students know that consistent practice matters, they often procrastinate when exams seem distant, which can weaken their final performance.",
+              translation:
+                "尽管学生知道坚持练习很重要，但当考试显得还很遥远时，他们往往会拖延，这可能削弱最终表现。",
+            },
+            {
+              english:
+                "Although managers recognize that planning is crucial, they frequently cut corners when deadlines pressure them, which can undermine project quality.",
+              translation:
+                "尽管管理者认识到规划至关重要，但在截止日期压力下他们经常走捷径，这可能损害项目质量。",
+            },
+          ],
+        },
+        notwithstanding: {
+          translation: "尽管存在风险，该决定仍是最终决定。",
+          vocabulary: [
+            {
+              text: "notwithstanding",
+              kind: "adv.",
+              occurrence_count: 4,
+              translation: "尽管；虽然",
+              note: "正式用语，相当于 in spite of",
+            },
+            {
+              text: "the risks",
+              kind: "n.",
+              occurrence_count: 6,
+              translation: "风险",
+            },
+            {
+              text: "was final",
+              kind: "短语",
+              occurrence_count: 1,
+              translation: "是最终的",
+            },
+          ],
+          grammar: {
+            main_clause: "The decision was final",
+            clauses: ["notwithstanding the risks（插入语/状语）"],
+            subject: "The decision",
+            predicate: "was",
+            object: "final（表语）",
+            modifiers: [
+              "notwithstanding the risks 作让步状语，置于主语与谓语之间",
+            ],
+            details: ["时态：一般过去时"],
+          },
+          why_written:
+            "把 notwithstanding 放在主语与谓语之间，既保留正式语气，又在语义上先让步再下判断。",
+          similar_sentences: [
+            {
+              english:
+                "The policy, notwithstanding public debate, took effect immediately.",
+              translation: "尽管存在公众争论，该政策仍立即生效。",
+            },
+            {
+              english:
+                "The team, notwithstanding injuries, secured a decisive victory.",
+              translation: "尽管有伤病，该队仍取得决定性胜利。",
+            },
+          ],
+        },
+      };
+
+      function getMockLearning(sentence, selection) {
+        const text = (sentence || selection || "").toLowerCase();
+        if (
+          text.includes("investor") ||
+          text.includes("volatile") ||
+          text.includes("impulsive")
+        ) {
+          return MOCK_LEARNING.investor;
+        }
+        if (text.includes("notwithstanding")) {
+          return MOCK_LEARNING.notwithstanding;
+        }
+        return MOCK_LEARNING.investor;
+      }
+
+      function vocabKindLabel(item) {
+        return item.kind || (item.text.trim().includes(" ") ? "短语" : "单词");
+      }
+
+      function vocabOccurrenceCount(item) {
+        if (item.occurrence_count != null) return item.occurrence_count;
+        const lemma = vocabLemma(item.text);
+        return state.bank[lemma]?.count ?? 1;
+      }
+
+      function renderLearningPanel(learning) {
+        const sl = " stream-line";
+
+        const g = learning.grammar;
+        const grammarRows = [];
+        if (g.main_clause) grammarRows.push(["主句", g.main_clause]);
+        if (g.subject) grammarRows.push(["主语", g.subject]);
+        if (g.predicate) grammarRows.push(["谓语", g.predicate]);
+        if (g.object) grammarRows.push(["宾语/表语", g.object]);
+        (g.clauses || []).forEach((c, i) =>
+          grammarRows.push([i === 0 ? "从句" : "", c])
+        );
+        (g.modifiers || []).forEach((m, i) =>
+          grammarRows.push([i === 0 ? "修饰成分" : "", m])
+        );
+
+        const grammarHtml = grammarRows
+          .map(
+            ([label, value]) => `
+          <div class="grammar-row${sl}">
+            <span class="grammar-label">${escapeHtml(label)}</span>
+            <span>${escapeHtml(value)}</span>
+          </div>`
+          )
+          .join("");
+
+        const detailsHtml = (g.details || [])
+          .map((d) => `<li>${escapeHtml(d)}</li>`)
+          .join("");
+
+        const similarHtml = learning.similar_sentences
+          .map(
+            (s, i) => `
+          <div class="similar-card${sl}">
+            <div class="similar-index">例句 ${i + 1}</div>
+            <p class="similar-en">${escapeHtml(s.english)}</p>
+            <p class="similar-zh">${escapeHtml(s.translation)}</p>
+          </div>`
+          )
+          .join("");
+
+        return `
+          <div class="block-title stream-line">翻译</div>
+          <p class="translation-box stream-line">${escapeHtml(learning.translation)}</p>
+          <div class="block-title stream-line">语法结构</div>
+          <div class="grammar-table grammar-stream">${grammarHtml}</div>
+          ${detailsHtml ? `<ul class="bullet-list stream-line">${detailsHtml}</ul>` : ""}
+          <div class="block-title stream-line">为什么这样写</div>
+          <div class="why-box stream-line">${escapeHtml(learning.why_written)}</div>
+          <div class="block-title stream-line">仿写例句</div>
+          <div class="similar-list grammar-stream">${similarHtml}</div>`;
+      }
+
+      function getSelectionRect() {
+        const sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0) return null;
+        const range = sel.getRangeAt(0);
+        return range.getBoundingClientRect();
+      }
+
+      function positionPopover() {
+        if (!lastRect) return;
+        const pop = document.getElementById("popover");
+        const gap = 8;
+        const popHeight = 240;
+        let top = lastRect.bottom + gap + window.scrollY;
+        if (lastRect.bottom + popHeight + gap > window.innerHeight) {
+          top = lastRect.top - gap - popHeight + window.scrollY;
+        }
+        let left = lastRect.left + lastRect.width / 2 + window.scrollX;
+        const popWidth = 300;
+        left = Math.max(
+          12 + popWidth / 2,
+          Math.min(left, window.innerWidth - 12 - popWidth / 2)
+        );
+        eraPopoverLayer.style.transform = `translate(${left - popWidth / 2}px, ${top}px)`;
+        eraPopoverLayer.style.left = "0";
+        eraPopoverLayer.style.top = "0";
+        eraPopoverLayer.classList.remove("era-hidden");
+      }
+
+      function readSelection() {
+        const sel = window.getSelection();
+        if (!sel || sel.isCollapsed) return null;
+        const text = sel.toString().trim();
+        if (!text || text.length > 500) return null;
+        const anchor = sel.anchorNode;
+        if (!anchor || !article.contains(anchor)) return null;
+        return text;
+      }
+
+      function hidePopover() {
+        state.popoverOpen = false;
+        clearTimeout(translateTimer);
+        eraPopoverLayer.classList.add("era-hidden");
+      }
+
+      function closeAll() {
+        hidePopover();
+        window.getSelection()?.removeAllRanges();
+      }
+
+      function getSaveKey() {
+        if (!state.selection) return "";
+        const lemma = vocabLemma(state.selection);
+        return `${lemma}::${state.sentence.slice(0, 80)}`;
+      }
+
+      function updateSaveButtonState() {
+        const saved = state.savedKeys.has(getSaveKey());
+        btnSaveHeader.textContent = saved ? "★" : "☆";
+        btnSaveHeader.classList.toggle("saved", saved);
+        btnSaveHeader.setAttribute(
+          "aria-label",
+          saved ? "已保存到词库" : "保存到词库"
+        );
+        btnSaveHeader.title = saved ? "已保存" : "保存到词库";
+      }
+
+      function showToast(message, type = "success") {
+        clearTimeout(toastTimer);
+        toastText.textContent = message;
+        toast.classList.toggle("warning", type === "warning");
+        toast.classList.remove("era-hidden");
+        toastTimer = setTimeout(() => {
+          toast.classList.add("era-hidden");
+        }, 2000);
+      }
+
+      function flashButton(btn) {
+        const orig = btn.textContent;
+        btn.classList.add("btn-success-flash");
+        btn.textContent = "已保存 ✓";
+        btn.disabled = true;
+        setTimeout(() => {
+          btn.classList.remove("btn-success-flash");
+          btn.textContent = orig;
+          btn.disabled = false;
+        }, 2000);
+      }
+
+      function renderPopoverLoading() {
+        popoverBody.innerHTML = `
+          <div class="skeleton">
+            <div class="skeleton-line w80"></div>
+            <div class="skeleton-line w60"></div>
+          </div>`;
+      }
+
+      function renderPopoverContent(entry) {
+        popoverWord.textContent =
+          entry.word.length > 28 ? entry.word.slice(0, 28) + "…" : entry.word;
+        popoverBody.innerHTML = `
+          <p class="meaning" style="margin:0">
+            <span class="pos-tag">${entry.pos}</span>${escapeHtml(entry.meaning)}
+          </p>`;
+      }
+
+      function escapeHtml(s) {
+        return s
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      function openTranslate(force = false) {
+        if (!state.selection || !state.autoTranslate) return;
+        const requestKey = state.selection.trim();
+        if (!force && state.popoverOpen && state.lastRequestKey === requestKey) {
+          updateSaveButtonState();
+          return;
+        }
+        state.lastRequestKey = requestKey;
+        state.popoverOpen = true;
+        const rect = getSelectionRect();
+        if (rect) lastRect = rect;
+        positionPopover();
+        renderPopoverLoading();
+        updateSaveButtonState();
+        popoverWord.textContent =
+          state.selection.length > 28
+            ? state.selection.slice(0, 28) + "…"
+            : state.selection;
+        const entry = lookupEntry(state.selection);
+        clearTimeout(translateTimer);
+        translateTimer = setTimeout(() => {
+          renderPopoverContent(entry);
+        }, 400);
+      }
+
+      function switchTab(tabName) {
+        document.querySelectorAll(".tab").forEach((t) => {
+          t.classList.toggle("active", t.dataset.tab === tabName);
+        });
+        document.querySelectorAll(".tab-panel").forEach((p) => {
+          p.classList.remove("active");
+        });
+        const map = {
+          grammar: "panelGrammar",
+          bank: "panelBank",
+        };
+        document.getElementById(map[tabName]).classList.add("active");
+      }
+
+      function focusSidePanel(tab = "grammar") {
+        switchTab(tab);
+        sidePanel.classList.add("focused");
+        sidePanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        setTimeout(() => sidePanel.classList.remove("focused"), 1600);
+      }
+
+      function renderGrammar() {
+        if (!state.selection && !state.sentence) return;
+        if (!state.sentence) {
+          state.sentence = extractSentence(state.selection, article);
+        }
+        const learning = getMockLearning(state.sentence, state.selection);
+        state.grammarReady = true;
+        state.vocabulary = learning.vocabulary;
+        grammarEmpty.classList.add("era-hidden");
+        grammarContent.classList.remove("era-hidden");
+        grammarContent.innerHTML = renderLearningPanel(learning);
+        renderSentenceBank();
+        switchTab("grammar");
+        focusSidePanel("grammar");
+      }
+
+      function loadDemoLearning() {
+        state.selection = "volatile";
+        state.sentence = INVESTOR_SENTENCE;
+        state.grammarReady = true;
+        state.vocabulary = MOCK_LEARNING.investor.vocabulary;
+        renderSentenceBank();
+        renderGrammar();
+        switchTab("bank");
+        showToast("已加载 Kimi 学习面板 · 请在词库中选择留标");
+      }
+
+      function highlightInSentence(sentence, word) {
+        const w = normalizeWord(word) || word;
+        const re = new RegExp(`(${w})`, "i");
+        return escapeHtml(sentence).replace(re, "<strong>$1</strong>");
+      }
+
+      function saveWord(sourceBtn, wordOverride, meaningOverride) {
+        const targetWord = wordOverride || state.selection;
+        if (!targetWord || !state.sentence) return;
+        const entry = lookupEntry(targetWord);
+        const lemma = vocabLemma(targetWord);
+        const meaning = meaningOverride || entry.meaning;
+        const key = `${lemma}::${state.sentence.slice(0, 80)}`;
+
+        if (state.savedKeys.has(key)) {
+          showToast(`已在本篇记录过「${targetWord.trim()}」`, "warning");
+          updateSaveButtonState();
+          renderSentenceBank();
+          return;
+        }
+
+        state.savedKeys.add(key);
+        state.markedLemmas.add(lemma);
+
+        if (!state.bank[lemma]) {
+          state.bank[lemma] = {
+            lemma: targetWord.trim(),
+            meaning,
+            count: 1,
+          };
+          state.stats.new += 1;
+          state.stats.review += 1;
+          showToast(`已留标「${targetWord.trim()}」`);
+        } else {
+          state.bank[lemma].count += 1;
+          showToast(`已记录「${targetWord.trim()}」的新语境`);
+        }
+
+        updateStats();
+        renderSentenceBank();
+        updateSaveButtonState();
+      }
+
+      function updateStats() {
+        document.getElementById("statNew").textContent = state.stats.new;
+        document.getElementById("statReview").textContent = state.savedKeys.size;
+      }
+
+      function renderSentenceBank() {
+        bankList.innerHTML = "";
+
+        if (!state.grammarReady || state.vocabulary.length === 0) {
+          bankHeader.classList.add("era-hidden");
+          bankEmpty.classList.remove("era-hidden");
+          if (state.sentence && !state.grammarReady) {
+            bankEmpty.innerHTML = `
+              <div class="empty-icon">📚</div>
+              请先打开「学习」面板<br /><span style="font-size:12px;color:var(--era-text-tertiary)">Kimi 会推荐本句重点词汇，由你自行选择留标</span>`;
+          } else {
+            bankEmpty.innerHTML = `
+              <div class="empty-icon">📚</div>
+              打开「学习」面板后<br />此处展示 Kimi 推荐的重点词汇<br /><span style="font-size:12px;color:var(--era-text-tertiary)">点击 ☆ 留标你想学的词或短语</span>`;
+          }
+          return;
+        }
+
+        bankEmpty.classList.add("era-hidden");
+        bankHeader.classList.remove("era-hidden");
+        bankHeader.textContent = `重点词汇 · ${state.vocabulary.length} 项 · 点击行展开详情，☆ 留标`;
+
+        state.vocabulary.forEach((item) => {
+          const lemma = vocabLemma(item.text);
+          const saved = isLemmaSaved(lemma);
+          const isExpanded = state.expandedBankLemma === lemma;
+          const kind = vocabKindLabel(item);
+          const count = vocabOccurrenceCount(item);
+          const row = document.createElement("div");
+          row.className =
+            "word-row" + (isExpanded ? " expanded" : "") + (saved ? " marked" : "");
+
+          const starBtn = document.createElement("button");
+          starBtn.type = "button";
+          starBtn.className =
+            "btn btn-outline btn-save-star word-row-star" +
+            (saved ? " saved" : "");
+          starBtn.textContent = saved ? "★" : "☆";
+          starBtn.title = saved ? "已留标" : "留标";
+          starBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            saveWord(starBtn, item.text, item.translation);
+          });
+
+          const noteHtml = item.note
+            ? `<p class="word-row-detail-meta">${escapeHtml(item.note)}</p>`
+            : "";
+
+          row.innerHTML = `
+            <div class="word-row-main">
+              <span class="word-row-chevron" aria-hidden="true">›</span>
+              <span class="word-row-lemma">${escapeHtml(item.text)}</span>
+              <span class="word-row-pos">${escapeHtml(kind)}</span>
+              <span class="word-row-count">${count} 次</span>
+            </div>
+            <div class="word-row-detail">
+              <div class="word-row-detail-label">释义</div>
+              <p class="word-row-detail-text">${escapeHtml(item.translation)}</p>
+              ${noteHtml}
+            </div>`;
+          row.querySelector(".word-row-main").appendChild(starBtn);
+
+          row.addEventListener("click", () => {
+            state.expandedBankLemma =
+              state.expandedBankLemma === lemma ? "" : lemma;
+            renderSentenceBank();
+          });
+
+          bankList.appendChild(row);
+        });
+      }
+
+      function onSelectionEnd() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          const text = readSelection();
+          if (!text) {
+            if (!state.popoverOpen) hidePopover();
+            return;
+          }
+          state.selection = text;
+          state.sentence = extractSentence(text, article);
+          state.grammarReady = false;
+          state.vocabulary = [];
+          renderSentenceBank();
+          if (state.autoTranslate) {
+            openTranslate();
+          }
+        }, 300);
+      }
+
+      article.addEventListener("mouseup", onSelectionEnd);
+
+      document.getElementById("btnGrammar").addEventListener("click", renderGrammar);
+      document
+        .getElementById("btnDemoLearning")
+        .addEventListener("click", loadDemoLearning);
+      document.getElementById("btnSaveHeader").addEventListener("click", (e) =>
+        saveWord(e.currentTarget)
+      );
+      document.getElementById("btnClose").addEventListener("click", closeAll);
+
+      document.querySelectorAll(".tab").forEach((tab) => {
+        tab.addEventListener("click", () => switchTab(tab.dataset.tab));
+      });
+
+      document.getElementById("btnOpenPanel").addEventListener("click", () =>
+        focusSidePanel(state.sentence ? "bank" : "grammar")
+      );
+      document.getElementById("btnScrollPanel").addEventListener("click", () => {
+        sidePanel.scrollIntoView({ behavior: "smooth" });
+      });
+
+      document.getElementById("toggleBar").addEventListener("click", (e) => {
+        state.autoTranslate = !state.autoTranslate;
+        e.currentTarget.classList.toggle("on", state.autoTranslate);
+        if (!state.autoTranslate) closeAll();
+        showToast(state.autoTranslate ? "已开启选中即翻译" : "已关闭选中即翻译");
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          closeAll();
+          return;
+        }
+        if (!state.selection) return;
+        if (e.altKey && e.key.toLowerCase() === "g") {
+          e.preventDefault();
+          renderGrammar();
+        }
+        if (e.altKey && e.key.toLowerCase() === "s") {
+          e.preventDefault();
+          saveWord(document.getElementById("btnSaveHeader"));
+        }
+      });
+
+      document.addEventListener("mousedown", (e) => {
+        const t = e.target;
+        if (eraPopoverLayer.contains(t) || article.contains(t)) return;
+        hidePopover();
+      });
+
+      window.addEventListener(
+        "scroll",
+        () => {
+          if (!state.popoverOpen || !state.selection) return;
+          const rect = getSelectionRect();
+          if (rect && (rect.width || rect.height)) {
+            lastRect = rect;
+            positionPopover();
+          }
+        },
+        true
+      );
+
+      updateStats();
+      renderSentenceBank();
+      loadDemoLearning();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,13 @@
+---
+description: KeepMark Agent 约束 — 必读 server/spec/README.md §Agent 约束
+alwaysApply: true
+---
+
+# KeepMark
+
+项目根：`ai-toys/keepmark/`。
+
+**必须先读** `server/spec/README.md` → **「Agent 约束（须遵守）」**（文档分工、修改顺序、翻译查库优先、data-model 同步等）。
+
+- 业务流程：`server/spec/usecase.md`
+- 表与 Repo：`server/spec/data-model.md`
