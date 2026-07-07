@@ -1,3 +1,7 @@
+import { API_BASE } from "../shared/api-base";
+import { parseApiError } from "../shared/api-normalize";
+import type { ApiProxyRequest, ApiProxyResponse } from "../shared/api-types";
+
 export default defineBackground(() => {
   chrome.runtime.onInstalled.addListener(() => {
     chrome.contextMenus.create({
@@ -26,6 +30,19 @@ export default defineBackground(() => {
   });
 
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message?.type === "KEEPMARK_API") {
+      void handleApiProxy(message as ApiProxyRequest)
+        .then(sendResponse)
+        .catch((err: unknown) => {
+          sendResponse({
+            ok: false,
+            status: 0,
+            error: err instanceof Error ? err.message : "网络请求失败",
+          } satisfies ApiProxyResponse);
+        });
+      return true;
+    }
+
     if (message?.type === "KEEPMARK_OPEN_SIDE_PANEL" && sender.tab?.id) {
       void chrome.sidePanel
         .open({ tabId: sender.tab.id })
@@ -36,3 +53,29 @@ export default defineBackground(() => {
     return false;
   });
 });
+
+async function handleApiProxy(message: ApiProxyRequest): Promise<ApiProxyResponse> {
+  const res = await fetch(`${API_BASE}${message.path}`, {
+    method: message.method,
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: message.body !== undefined ? JSON.stringify(message.body) : undefined,
+  });
+
+  const raw = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+
+  if (!res.ok) {
+    return {
+      ok: false,
+      status: res.status,
+      error: parseApiError(raw, res.status),
+    };
+  }
+
+  return {
+    ok: true,
+    status: res.status,
+    data: raw,
+  };
+}

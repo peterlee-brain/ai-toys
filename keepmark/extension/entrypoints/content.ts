@@ -1,9 +1,16 @@
-import { lookupEntry } from "../shared/mock-dict";
-import { getMockLearning } from "../shared/mock-learning";
+import {
+  apiGrammar,
+  apiMark,
+  apiTranslate,
+  formatApiError,
+  grammarToLearning,
+  type TranslateResponse,
+} from "../shared/api";
 import { loadState, saveState } from "../shared/storage";
 import {
   getSaveKey,
   saveWord,
+  vocabLemma,
 } from "../shared/state-logic";
 import {
   escapeHtml,
@@ -170,20 +177,24 @@ export default defineContentScript({
         </div>`;
     }
 
-    function renderContent(entry: ReturnType<typeof lookupEntry>) {
+    function renderContent(entry: TranslateResponse) {
       refs.word.textContent =
         entry.word.length > 28 ? entry.word.slice(0, 28) + "…" : entry.word;
+      const collocation = entry.collocation
+        ? `<p class="km-collocation">${escapeHtml(entry.collocation)}</p>`
+        : "";
       refs.body.innerHTML = `
         <p class="km-meaning">
           <span class="km-pos-tag">${escapeHtml(entry.pos)}</span>${escapeHtml(entry.meaning)}
-        </p>`;
+        </p>
+        ${collocation}
+        <p class="km-seen-count">全库出现 ${entry.seen_count} 次${entry.from_cache ? " · 缓存" : ""}</p>`;
     }
 
-    function openTranslate(force = false) {
-      if (!state?.selection) return;
-      if (!state.autoTranslate && !force) return;
+    async function fetchTranslate(force = false) {
+      if (!state?.selection || !state.sentence) return;
 
-      const requestKey = state.selection.trim();
+      const requestKey = `${state.selection.trim()}::${state.sentence.slice(0, 80)}`;
       if (!force && popoverOpen && lastRequestKey === requestKey) {
         updateSaveButton();
         return;
@@ -199,9 +210,34 @@ export default defineContentScript({
           ? state.selection.slice(0, 28) + "…"
           : state.selection;
 
-      const entry = lookupEntry(state.selection);
+      try {
+        const entry = await apiTranslate({
+          selection: state.selection,
+          sentence: state.sentence,
+          page_url: state.pageUrl,
+        });
+        state = {
+          ...state,
+          lemma: entry.lemma,
+          sentenceId: entry.sentence_id,
+        };
+        renderContent(entry);
+        void persist(state);
+      } catch (err) {
+        refs.body.innerHTML = `<p class="km-meaning km-error">${escapeHtml(
+          formatApiError(err)
+        )}</p>`;
+      }
+    }
+
+    function openTranslate(force = false) {
+      if (!state?.selection) return;
+      if (!state.autoTranslate && !force) return;
+
       if (translateTimer) clearTimeout(translateTimer);
-      translateTimer = setTimeout(() => renderContent(entry), 250);
+      translateTimer = setTimeout(() => {
+        void fetchTranslate(force);
+      }, 250);
     }
 
     function scheduleSelectionCheck() {
@@ -240,6 +276,9 @@ export default defineContentScript({
         pageTitle: document.title,
         grammarReady: false,
         vocabulary: [],
+        learning: null,
+        lemma: "",
+        sentenceId: "",
         sidePanelTab: "bank",
       };
 
@@ -252,30 +291,65 @@ export default defineContentScript({
 
     async function handleSave() {
       if (!state) state = await loadState();
-      const result = saveWord(state);
-      if (!result.ok) {
-        showToast(result.message, result.type);
+
+      const saveKey = getSaveKey(state);
+      if (saveKey && state.savedKeys.includes(saveKey)) {
+        showToast(`已在本句记录过「${state.selection.trim()}」`, "warning");
         updateSaveButton();
         return;
       }
-      await persist({ ...state });
-      showToast(result.message, result.type);
-      updateSaveButton();
+
+      const lemma =
+        state.lemma || vocabLemma(state.selection) || state.selection.trim();
+
+      try {
+        const res = await apiMark({
+          lemma,
+          sentence_id: state.sentenceId || undefined,
+        });
+        const result = saveWord(state);
+        if (!result.ok) {
+          showToast(result.message, result.type);
+          updateSaveButton();
+          return;
+        }
+        await persist({ ...state });
+        showToast(res.message || result.message, result.type);
+        updateSaveButton();
+      } catch (err) {
+        showToast(formatApiError(err), "warning");
+      }
     }
 
     async function openGrammarPanel() {
-      if (!state?.selection) return;
-      const learning = getMockLearning(state.sentence, state.selection);
-      const next = {
-        ...state,
-        grammarReady: true,
-        vocabulary: learning.vocabulary,
-        sidePanelTab: "grammar" as const,
-      };
-      await persist(next);
-      await chrome.runtime
-        .sendMessage({ type: "KEEPMARK_OPEN_SIDE_PANEL", tab: "grammar" })
-        .catch(() => {});
+      if (!state?.selection || !state.sentence) return;
+
+      hidePopover();
+      refs.grammar.disabled = true;
+      try {
+        const res = await apiGrammar({
+          selection: state.selection,
+          sentence: state.sentence,
+          page_url: state.pageUrl,
+        });
+        const learning = grammarToLearning(res);
+        const next = {
+          ...state,
+          grammarReady: true,
+          learning,
+          vocabulary: learning.vocabulary,
+          sentenceId: res.sentence_id,
+          sidePanelTab: "grammar" as const,
+        };
+        await persist(next);
+        await chrome.runtime
+          .sendMessage({ type: "KEEPMARK_OPEN_SIDE_PANEL", tab: "grammar" })
+          .catch(() => {});
+      } catch (err) {
+        showToast(formatApiError(err), "warning");
+      } finally {
+        refs.grammar.disabled = false;
+      }
     }
 
     refs.grammar.addEventListener("click", (e) => {
@@ -367,13 +441,13 @@ export default defineContentScript({
       if (message?.type === "KEEPMARK_FORCE_GRAMMAR" && message.text) {
         void loadState().then(async (s) => {
           const sentence = extractSentence(String(message.text), pageRootText());
-          const learning = getMockLearning(sentence, String(message.text));
           state = {
             ...s,
             selection: String(message.text),
             sentence,
-            grammarReady: true,
-            vocabulary: learning.vocabulary,
+            grammarReady: false,
+            learning: null,
+            vocabulary: [],
             sidePanelTab: "grammar",
           };
           await persist(state);

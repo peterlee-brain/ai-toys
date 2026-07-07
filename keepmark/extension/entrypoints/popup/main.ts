@@ -9,7 +9,7 @@ const app = document.getElementById("app")!;
 app.innerHTML = `
   <div class="km-popup">
     <h1>KeepMark · 留标</h1>
-    <p class="km-popup-sub">演示版 · 本地 mock 数据</p>
+    <p class="km-popup-sub">已连接 43.165.167.70:8080</p>
     <div class="km-stats">
       <div>
         <div id="statNew" class="km-stat-num">0</div>

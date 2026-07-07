@@ -1,4 +1,4 @@
-import { getMockLearning } from "../../shared/mock-learning";
+import { apiMark } from "../../shared/api";
 import { renderLearningHtml } from "../../shared/render-learning";
 import { loadState, onStateChanged, saveState } from "../../shared/storage";
 import {
@@ -22,7 +22,7 @@ document.head.appendChild(style);
 
 app.innerHTML = `
   <div class="km-panel">
-    <div class="km-demo-badge">演示模式 · 翻译为本地 mock；学习面板展示 Kimi JSON 结构 mock，留标保存在浏览器本地。</div>
+    <div class="km-demo-badge">已连接线上 API · 翻译 / 学习 / 留标走 Kimi 后端</div>
     <div class="km-panel-header">KeepMark · 留标</div>
     <div class="km-tabs">
       <button type="button" class="km-tab active" data-tab="grammar">学习</button>
@@ -74,17 +74,21 @@ document.querySelectorAll(".km-tab").forEach((tab) => {
 });
 
 function renderGrammar(state: KeepMarkState) {
-  if (!state.selection || !state.grammarReady) {
+  if (!state.selection || !state.grammarReady || !state.learning) {
     grammarEmpty.classList.remove("km-hidden");
     grammarContent.classList.add("km-hidden");
+    if (state.selection && !state.grammarReady) {
+      grammarEmpty.innerHTML = `
+        <div class="km-empty-icon">⏳</div>
+        正在加载学习内容…`;
+    }
     return;
   }
 
-  const learning = getMockLearning(state.sentence, state.selection);
   grammarEmpty.classList.add("km-hidden");
   grammarContent.classList.remove("km-hidden");
 
-  grammarContent.innerHTML = renderLearningHtml(learning, {
+  grammarContent.innerHTML = renderLearningHtml(state.learning, {
     prefix: "km-",
     stream: true,
   });
@@ -134,9 +138,21 @@ function renderBank(state: KeepMarkState) {
     starBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       void loadState().then(async (s) => {
-        saveWord(s, item.text, item.translation);
-        await saveState({ ...s });
-        renderAll(s);
+        const lemma = vocabLemma(item.text);
+        const saveKey = `${lemma}::${s.sentence.slice(0, 80)}`;
+        if (s.savedKeys.includes(saveKey)) return;
+
+        try {
+          await apiMark({
+            lemma,
+            sentence_id: s.sentenceId || undefined,
+          });
+          saveWord(s, item.text, item.translation);
+          await saveState({ ...s });
+          renderAll(s);
+        } catch {
+          /* ignore — user sees no star change */
+        }
       });
     });
 

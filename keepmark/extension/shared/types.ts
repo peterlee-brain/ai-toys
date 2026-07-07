@@ -1,4 +1,4 @@
-import type { VocabItem } from "./learning-types";
+import type { LearningResult, VocabItem } from "./learning-types";
 
 export interface DictEntry {
   pos: string;
@@ -26,6 +26,12 @@ export interface KeepMarkState {
   grammarReady: boolean;
   /** Kimi 推荐的重点词汇，打开学习面板后填充 */
   vocabulary: VocabItem[];
+  /** 最近一次 grammar API 返回的完整学习数据 */
+  learning: LearningResult | null;
+  /** 当前句子 id（translate / grammar 响应） */
+  sentenceId: string;
+  /** 当前选中词的 normalize lemma */
+  lemma: string;
   pageUrl: string;
   pageTitle: string;
   expandedBankLemma: string;
@@ -44,6 +50,9 @@ export const DEFAULT_STATE: KeepMarkState = {
   sidePanelTab: "grammar",
   grammarReady: false,
   vocabulary: [],
+  learning: null,
+  sentenceId: "",
+  lemma: "",
   pageUrl: "",
   pageTitle: "",
   expandedBankLemma: "",

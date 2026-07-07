@@ -1,0 +1,36 @@
+app:
+  name: "svc-kline"
+  env: "development"
+
+server:
+  http:
+    addr: "0.0.0.0:8080"
+    timeout: 5s
+  worker:
+    bn_kline_subworker:
+      mode: "single"
+      backfill_cron: "*/5 * * * *"
+      backfill_lookback_minutes: 60
+      token_meta_poll_interval: 5m
+      sentinel_interval: 1m
+      seed_default_symbol: true
+
+data:
+  mongo:
+    uri: "mongodb://127.0.0.1:27017"
+    database: "keywa_asset"
+    token_meta_collection: "token_meta"
+    kline_collection: "token_price_minute"
+  redis:
+    addr: "127.0.0.1:6379"
+    password: "social_tool_dev"
+    db: 0
+    dial_timeout: 3s
+    read_timeout: 10s
+    write_timeout: 10s
+  binance:
+    websocket_endpoint: "wss://stream.binance.com:9443/ws"
+    rest_endpoint: "https://api.binance.com"
+    interval: "1m"
+    rest_limit_per_minute: 1000
+    sentinel_limit: 3

@@ -1,14 +1,22 @@
 import { defineConfig } from "wxt";
 
+const apiBase =
+  process.env.VITE_API_BASE_URL?.replace(/\/$/, "") ||
+  "http://43.165.167.70:8080";
+
 export default defineConfig({
   srcDir: ".",
   outDir: "dist",
+  webExt: {
+    disabled: true,
+  },
   manifest: {
     name: "KeepMark · 留标",
     description:
-      "Read English in place: auto-translate on select, grammar on demand, keep only words you mark. (Demo / mock data)",
-    version: "0.1.1",
+      "Read English in place: auto-translate on select, grammar on demand, keep only words you mark.",
+    version: "0.1.2",
     permissions: ["activeTab", "storage", "contextMenus", "sidePanel"],
+    host_permissions: [`${apiBase}/*`],
     side_panel: {
       default_path: "sidepanel.html",
     },
