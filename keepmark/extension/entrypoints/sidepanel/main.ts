@@ -22,8 +22,14 @@ document.head.appendChild(style);
 
 app.innerHTML = `
   <div class="km-panel">
-    <div class="km-demo-badge">已连接线上 API · 翻译 / 学习 / 留标走 Kimi 后端</div>
-    <div class="km-panel-header">KeepMark · 留标</div>
+    <div class="km-panel-header">
+      <span class="km-panel-header-title">KeepMark</span>
+      <div class="km-panel-header-toggle">
+        <span class="km-panel-header-toggle-label">选中即翻译</span>
+        <button type="button" id="toggleAuto" class="km-toggle on" aria-label="选中即翻译"></button>
+      </div>
+      <button type="button" id="btnClosePanel" class="km-btn km-btn-icon" title="关闭侧栏" aria-label="关闭侧栏">×</button>
+    </div>
     <div class="km-tabs">
       <button type="button" class="km-tab active" data-tab="grammar">学习</button>
       <button type="button" class="km-tab" data-tab="bank">词库</button>
@@ -52,6 +58,20 @@ const grammarContent = document.getElementById("grammarContent")!;
 const bankHeader = document.getElementById("bankHeader")!;
 const bankList = document.getElementById("bankList")!;
 const bankEmpty = document.getElementById("bankEmpty")!;
+const toggleAuto = document.getElementById("toggleAuto")!;
+
+document.getElementById("btnClosePanel")!.addEventListener("click", () => {
+  window.close();
+});
+
+toggleAuto.addEventListener("click", () => {
+  void loadState().then(async (state) => {
+    const next = { ...state, autoTranslate: !state.autoTranslate };
+    await saveState(next);
+    toggleAuto.classList.toggle("on", next.autoTranslate);
+    chrome.runtime.sendMessage({ type: "KEEPMARK_TOGGLE_AUTO" }).catch(() => {});
+  });
+});
 
 function switchTab(tabName: "grammar" | "bank") {
   document.querySelectorAll(".km-tab").forEach((t) => {
@@ -189,9 +209,14 @@ function renderBank(state: KeepMarkState) {
   if (state.sidePanelTab === "bank") switchTab("bank");
 }
 
+function renderFooter(state: KeepMarkState) {
+  toggleAuto.classList.toggle("on", state.autoTranslate);
+}
+
 function renderAll(state: KeepMarkState) {
   renderGrammar(state);
   renderBank(state);
+  renderFooter(state);
   switchTab(state.sidePanelTab);
 }
 

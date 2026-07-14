@@ -11,7 +11,7 @@ export default defineConfig({
     disabled: true,
   },
   manifest: {
-    name: "KeepMark · 留标",
+    name: "KeepMark",
     description:
       "Read English in place: auto-translate on select, grammar on demand, keep only words you mark.",
     version: "0.1.2",

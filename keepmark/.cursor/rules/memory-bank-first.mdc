@@ -1,0 +1,18 @@
+---
+description: memory-bank 先于代码 — API/DB/UI 变更顺序
+alwaysApply: true
+---
+
+# Memory Bank First
+
+```
+memory-bank/*.md → PLAN → code
+```
+
+| 变更 | 先更新 |
+|------|--------|
+| API | memory-bank/api.md |
+| DB | memory-bank/data-model.md |
+| 流程 | memory-bank/usecase.md |
+| 产品范围 | memory-bank/product.md |
+| UI | extension/docs/ui-spec.md |

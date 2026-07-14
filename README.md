@@ -1,71 +1,37 @@
-# 🤖 AI Toys
+# ai-toys
 
-> 借助 AI 快速完成小项目，为工作与生活提效。
+> 你的 **真实小项目** 总文件夹；用 **VibeCoding** 规范跟 Agent 协作开发。  
+> **怎么说话 → [DEVELOP.md](./DEVELOP.md)** · **文件说明 → [GUIDE.md](./GUIDE.md)**
 
-## 这是什么？
+## 子项目（都是真项目，不是练习题）
 
-AI Toys 是一个实验性仓库，用来存放各种借助 AI 工具（Claude、Codex、ChatGPT 等）快速构建的小项目、脚本和原型。
+| 项目 | 说明 | 入口 |
+|------|------|------|
+| [keepmark](./keepmark/) | **线上**英文阅读 Chrome 插件 + 后端 API | [keepmark/README.md](./keepmark/README.md) |
+| [true-social](./true-social/) | 社媒运营 + K 线采集 | [true-social/docs/](./true-social/docs/) |
 
-**核心理念**：把重复性、低价值的工作交给 AI，把时间留给真正重要的事情。
+以后新项目也放这里；文档结构可参考 keepmark 的 `memory-bank/`。
 
-## 项目类型
-
-这里可能包含：
-
-- 🛠️ **自动化脚本** — 批量处理、数据清洗、定时任务
-- 🧩 **小型工具** — 浏览器插件、CLI 工具、快捷指令
-- 🎮 **趣味原型** — 游戏、可视化、交互 demo
-- 📊 **效率工具** — 报表生成、模板引擎、工作流辅助
-- 🔗 **API 集成** — 第三方服务对接、Webhook 处理
-
-## 子项目
-
-| 项目 | 说明 |
-|------|------|
-| [keepmark（KeepMark · 留标）](./keepmark/) | Chrome 插件：读英文选中即译，只积累你标记的生词 |
-| [true-social](./true-social/) | 社媒运营工具（Twitter 监控 + AI 回复草稿）与 Binance K 线采集服务 |
-
-## 使用方式
-
-每个子项目独立成目录，包含：
+## 根目录是什么
 
 ```
-project-name/
-├── README.md       # 项目说明
-├── src/            # 源代码
-├── demo/           # 演示或截图
-└── ...
+ai-toys/
+├── DEVELOP.md          ★ 跟 Agent 说话（plan / go / fix）
+├── GUIDE.md            各文件干啥
+├── .cursor/rules/      Agent 自动遵守的规范
+├── docs/vibecoding/    完整 SOP（备查）
+├── keepmark/           真实项目
+└── true-social/        真实项目
 ```
 
-## 技术栈
+## 和 VibeCoding 的关系
 
-不固定。什么顺手用什么：
+- **ai-toys 根目录**：通用话术（DEVELOP）+ Agent 规则（`.mdc`）
+- **每个子项目**：自己的代码 + `memory-bank/`（产品、API、架构、进度）
+- 你在 **真实开发 keepmark** 的过程中，顺便练规范的 VibeCoding 流程
 
-- **前端**: React, Vue, Vanilla JS, HTML/CSS
-- **后端**: Node.js, Python, Go
-- **脚本**: Bash, Python, JavaScript
-- **AI 工具**: Claude Code, Codex, ChatGPT, Cursor
+## 纪律
 
-## 开发原则
-
-1. **快速验证** — 能跑就行，先验证想法
-2. **AI 优先** — 让 AI 写初版，人做 review 和优化
-3. **实用导向** — 解决真实问题，不做 toy for toy's sake
-4. **轻量维护** — 小项目不纠结架构，能工作就好
-
-## 提效场景示例
-
-| 场景 | AI 工具 | 产出 |
-|------|---------|------|
-| 重复数据整理 | Claude + Python 脚本 | 自动化报表生成器 |
-| 内部流程繁琐 | Codex + 小程序 | 一键审批工具 |
-| 想做个 side project | ChatGPT + React | MVP 原型 |
-| 学习新技术 | Cursor | 带注释的示例代码 |
-
-## 免责声明
-
-AI 生成的代码需要人工 review，**不要直接用于生产环境**。
-
----
-
-*Built with AI, curated by human.*
+1. 一次只改一个子项目  
+2. 大功能先 `keepmark plan` 再 `keepmark go 1`  
+3. 改 API/产品前先更新 `memory-bank/` 里对应文档

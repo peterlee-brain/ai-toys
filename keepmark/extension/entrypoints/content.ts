@@ -17,6 +17,7 @@ import {
   extractSentence,
   getContext,
   hasEnglishText,
+  isFullSentenceSelection,
 } from "../shared/text-utils";
 import type { KeepMarkState } from "../shared/types";
 import uiStyles from "../assets/styles/ui.css?inline";
@@ -284,6 +285,21 @@ export default defineContentScript({
 
       state = next;
 
+      if (isFullSentenceSelection(snap.text, sentence)) {
+        hidePopover();
+        const grammarState: KeepMarkState = {
+          ...next,
+          sidePanelTab: "grammar",
+          grammarReady: false,
+          learning: null,
+          vocabulary: [],
+        };
+        state = grammarState;
+        await persist(grammarState);
+        void openGrammarPanel();
+        return;
+      }
+
       if (next.autoTranslate) openTranslate();
 
       void persist(next);
@@ -326,6 +342,19 @@ export default defineContentScript({
 
       hidePopover();
       refs.grammar.disabled = true;
+
+      await chrome.runtime
+        .sendMessage({ type: "KEEPMARK_OPEN_SIDE_PANEL", tab: "grammar" })
+        .catch(() => {});
+
+      const loading = {
+        ...state,
+        grammarReady: false,
+        sidePanelTab: "grammar" as const,
+      };
+      state = loading;
+      await persist(loading);
+
       try {
         const res = await apiGrammar({
           selection: state.selection,
@@ -342,9 +371,6 @@ export default defineContentScript({
           sidePanelTab: "grammar" as const,
         };
         await persist(next);
-        await chrome.runtime
-          .sendMessage({ type: "KEEPMARK_OPEN_SIDE_PANEL", tab: "grammar" })
-          .catch(() => {});
       } catch (err) {
         showToast(formatApiError(err), "warning");
       } finally {

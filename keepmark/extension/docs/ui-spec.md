@@ -3,6 +3,8 @@
 > 版本：v1.0 · 状态：**定稿待确认**  
 > 适用范围：Chrome Extension MV3 · Content Script / Side Panel / Popup / Options
 
+**设计稿预览（与实现对齐）：** 打开 [../../design/design.html](../../design/design.html) — 引用 `extension/assets/styles/ui.css`，DOM 结构同 `entrypoints/`。
+
 ---
 
 ## 1. 设计原则

@@ -1,0 +1,25 @@
+---
+description: KeepMark 质量门禁
+alwaysApply: true
+---
+
+# Quality Gate
+
+## 通用
+
+- [ ] 与 PLAN 当前步骤一致
+- [ ] memory-bank 已同步
+- [ ] 无硬编码密钥
+
+## Extension
+
+```bash
+cd keepmark/extension && npm run typecheck
+cd keepmark/extension && npm run build   # 涉及构建配置时
+```
+
+## 后端（peter-sever）
+
+```bash
+cd peter-sever/app/svc_keepmark && go test ./...
+```
