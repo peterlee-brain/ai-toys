@@ -21,7 +21,6 @@ export interface KeepMarkState {
   bank: Record<string, BankEntry>;
   markedLemmas: string[];
   savedKeys: string[];
-  stats: { new: number; review: number };
   sidePanelTab: "grammar" | "bank";
   grammarReady: boolean;
   /** Kimi 推荐的重点词汇，打开学习面板后填充 */
@@ -46,7 +45,6 @@ export const DEFAULT_STATE: KeepMarkState = {
   bank: {},
   markedLemmas: [],
   savedKeys: [],
-  stats: { new: 0, review: 0 },
   sidePanelTab: "grammar",
   grammarReady: false,
   vocabulary: [],
@@ -61,4 +59,5 @@ export const DEFAULT_STATE: KeepMarkState = {
 export type MessageType =
   | { type: "KEEPMARK_OPEN_SIDE_PANEL"; tab?: "grammar" | "bank" }
   | { type: "KEEPMARK_RENDER_GRAMMAR" }
-  | { type: "KEEPMARK_STATE_UPDATED" };
+  | { type: "KEEPMARK_STATE_UPDATED" }
+  | { type: "KEEPMARK_TOGGLE_AUTO" };

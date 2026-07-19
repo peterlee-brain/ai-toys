@@ -63,8 +63,6 @@ export const DICT: Record<string, DictEntry> = {
   lingering: { pos: "adj.", meaning: "持续存在的；拖延的" },
   reconsidered: { pos: "v.", meaning: "重新考虑" },
   have: { pos: "v.", meaning: "有；已经" },
-  their: { pos: "pron.", meaning: "他们的" },
-  often: { pos: "adv.", meaning: "经常" },
   while: { pos: "conj.", meaning: "而；当…时" },
   some: { pos: "adj.", meaning: "一些" },
   in: { pos: "prep.", meaning: "在…里" },

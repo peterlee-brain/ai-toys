@@ -10,12 +10,12 @@ alwaysApply: true
 ## 写代码前
 
 1. [AGENTS.md](../AGENTS.md)
-2. [memory-bank/README.md](../memory-bank/README.md) — Agent 约束
+2. [spec/README.md](../spec/README.md) — Agent 约束
 3. [PLAN.md](../PLAN.md)
 
 ## 禁止
 
 - 无 PLAN 写业务代码
-- 跳过 memory-bank 改 API/DB/UI
+- 跳过 spec 改 API/DB/UI
 
 话术：[DEVELOP.md](../../DEVELOP.md)

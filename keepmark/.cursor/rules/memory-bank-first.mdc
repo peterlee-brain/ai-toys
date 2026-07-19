@@ -1,18 +1,18 @@
 ---
-description: memory-bank 先于代码 — API/DB/UI 变更顺序
+description: spec 先于代码 — UI/产品/API 变更顺序
 alwaysApply: true
 ---
 
-# Memory Bank First
+# Spec First
 
 ```
-memory-bank/*.md → PLAN → code
+spec/*.md → code
 ```
 
 | 变更 | 先更新 |
 |------|--------|
-| API | memory-bank/api.md |
-| DB | memory-bank/data-model.md |
-| 流程 | memory-bank/usecase.md |
-| 产品范围 | memory-bank/product.md |
-| UI | extension/docs/ui-spec.md |
+| API | peter-sever/spec/svc_keepmark/api.md |
+| 产品范围 | spec/product.md |
+| UI 面 | spec/ui/*.md |
+| 设计稿 | spec/ui/design.md + spec/design/ |
+| 前端总纲 | spec/architecture.md |

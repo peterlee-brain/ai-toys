@@ -40,14 +40,16 @@ app.innerHTML = `
           <div class="km-empty-icon">📖</div>
           在网页中选中英文后<br />点击 Popover「学习」或 <kbd>Alt+G</kbd>
         </div>
-        <div id="grammarContent" class="km-hidden"></div>
+        <div id="grammarContent" class="km-hidden">
+          <div id="grammarQuote" class="km-quote-card"></div>
+        </div>
       </div>
       <div id="panelBank" class="km-tab-panel">
         <div id="bankHeader" class="km-bank-header km-hidden"></div>
         <div id="bankList"></div>
         <div id="bankEmpty" class="km-empty">
           <div class="km-empty-icon">📚</div>
-          打开「学习」面板后<br />此处展示 Kimi 推荐的重点词汇<br /><span style="font-size:12px;color:var(--km-text-tertiary)">点击 ☆ 留标你想学的词或短语</span>
+          打开「学习」面板后<br />此处展示 Kimi 推荐的重点词汇<br /><span class="km-empty-hint">点击 ☆ 留标你想学的词或短语</span>
         </div>
       </div>
     </div>
@@ -55,6 +57,7 @@ app.innerHTML = `
 
 const grammarEmpty = document.getElementById("grammarEmpty")!;
 const grammarContent = document.getElementById("grammarContent")!;
+const grammarQuote = document.getElementById("grammarQuote")!;
 const bankHeader = document.getElementById("bankHeader")!;
 const bankList = document.getElementById("bankList")!;
 const bankEmpty = document.getElementById("bankEmpty")!;
@@ -93,6 +96,19 @@ document.querySelectorAll(".km-tab").forEach((tab) => {
   });
 });
 
+function highlightSelectionInQuote(sentence: string, selection: string): string {
+  if (!selection) return escapeHtml(sentence);
+  const idx = sentence.toLowerCase().indexOf(selection.toLowerCase());
+  if (idx === -1) return escapeHtml(sentence);
+  return (
+    escapeHtml(sentence.slice(0, idx)) +
+    "<strong>" +
+    escapeHtml(sentence.slice(idx, idx + selection.length)) +
+    "</strong>" +
+    escapeHtml(sentence.slice(idx + selection.length))
+  );
+}
+
 function renderGrammar(state: KeepMarkState) {
   if (!state.selection || !state.grammarReady || !state.learning) {
     grammarEmpty.classList.remove("km-hidden");
@@ -107,6 +123,8 @@ function renderGrammar(state: KeepMarkState) {
 
   grammarEmpty.classList.add("km-hidden");
   grammarContent.classList.remove("km-hidden");
+
+  grammarQuote.innerHTML = highlightSelectionInQuote(state.sentence, state.selection);
 
   grammarContent.innerHTML = renderLearningHtml(state.learning, {
     prefix: "km-",
@@ -125,11 +143,11 @@ function renderBank(state: KeepMarkState) {
     if (state.sentence && !state.grammarReady) {
       bankEmpty.innerHTML = `
         <div class="km-empty-icon">📚</div>
-        请先打开「学习」面板<br /><span style="font-size:12px;color:var(--km-text-tertiary)">Kimi 会推荐本句重点词汇，由你自行选择留标</span>`;
+        请先打开「学习」面板<br /><span class="km-empty-hint">Kimi 会推荐本句重点词汇，由你自行选择留标</span>`;
     } else {
       bankEmpty.innerHTML = `
         <div class="km-empty-icon">📚</div>
-        打开「学习」面板后<br />此处展示 Kimi 推荐的重点词汇<br /><span style="font-size:12px;color:var(--km-text-tertiary)">点击 ☆ 留标你想学的词或短语</span>`;
+        打开「学习」面板后<br />此处展示 Kimi 推荐的重点词汇<br /><span class="km-empty-hint">点击 ☆ 留标你想学的词或短语</span>`;
     }
     return;
   }
@@ -164,8 +182,12 @@ function renderBank(state: KeepMarkState) {
 
         try {
           await apiMark({
+            selection: s.selection,
+            sentence: s.sentence,
+            sentence_id: s.sentenceId,
             lemma,
-            sentence_id: s.sentenceId || undefined,
+            page_url: s.pageUrl,
+            source: "grammar",
           });
           saveWord(s, item.text, item.translation);
           await saveState({ ...s });

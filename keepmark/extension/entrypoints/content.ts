@@ -280,7 +280,6 @@ export default defineContentScript({
         learning: null,
         lemma: "",
         sentenceId: "",
-        sidePanelTab: "bank",
       };
 
       state = next;
@@ -320,8 +319,12 @@ export default defineContentScript({
 
       try {
         const res = await apiMark({
+          selection: state.selection,
+          sentence: state.sentence,
+          sentence_id: state.sentenceId,
           lemma,
-          sentence_id: state.sentenceId || undefined,
+          page_url: state.pageUrl,
+          source: "translate",
         });
         const result = saveWord(state);
         if (!result.ok) {

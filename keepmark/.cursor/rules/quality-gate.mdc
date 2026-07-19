@@ -8,7 +8,7 @@ alwaysApply: true
 ## 通用
 
 - [ ] 与 PLAN 当前步骤一致
-- [ ] memory-bank 已同步
+- [ ] spec 已同步
 - [ ] 无硬编码密钥
 
 ## Extension

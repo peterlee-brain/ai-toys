@@ -66,7 +66,6 @@ export function apiGrammar(body: {
   selection?: string;
   sentence: string;
   page_url?: string;
-  force_refresh?: boolean;
 }): Promise<GrammarResponse> {
   return apiRequest<GrammarResponse>(
     "/v1/grammar",
@@ -79,8 +78,12 @@ export function apiGrammar(body: {
 }
 
 export function apiMark(body: {
+  selection: string;
+  sentence: string;
+  sentence_id: string;
   lemma: string;
-  sentence_id?: string;
+  page_url: string;
+  source: "translate" | "grammar";
 }): Promise<MarkResponse> {
   return apiRequest<MarkResponse>(
     "/v1/words/mark",

@@ -58,8 +58,6 @@ export function saveWord(
       meaning,
       count: 1,
     };
-    state.stats.new += 1;
-    state.stats.review += 1;
     return {
       ok: true,
       message: `已留标「${targetWord.trim()}」`,
