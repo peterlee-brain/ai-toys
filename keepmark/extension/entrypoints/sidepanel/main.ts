@@ -172,18 +172,44 @@ function renderBank(state: KeepMarkState) {
 }
 
 function renderAll(state: KeepMarkState) {
+  const start = performance.now();
   renderGrammar(state);
   renderBank(state);
   switchTab(state.sidePanelTab);
+  console.log(`[KeepMark sidepanel] renderAll took ${Math.round(performance.now() - start)}ms`);
 }
 
-void loadState().then(renderAll);
+void loadState().then((state) => {
+  console.log("[KeepMark sidepanel] initial state", {
+    sentence: state.sentence?.slice(0, 40),
+    grammarReady: state.grammarReady,
+    vocabularyCount: state.vocabulary?.length,
+  });
+  renderAll(state);
+});
+
 onStateChanged(() => {
-  void loadState().then(renderAll);
+  console.log("[KeepMark sidepanel] storage changed");
+  void loadState().then((state) => {
+    console.log("[KeepMark sidepanel] re-render on change", {
+      sentence: state.sentence?.slice(0, 40),
+      grammarReady: state.grammarReady,
+      vocabularyCount: state.vocabulary?.length,
+    });
+    renderAll(state);
+  });
 });
 
 chrome.runtime.onMessage.addListener((message) => {
   if (message?.type === "KEEPMARK_STATE_UPDATED") {
-    void loadState().then(renderAll);
+    console.log("[KeepMark sidepanel] KEEPMARK_STATE_UPDATED received");
+    void loadState().then((state) => {
+      console.log("[KeepMark sidepanel] re-render on message", {
+        sentence: state.sentence?.slice(0, 40),
+        grammarReady: state.grammarReady,
+        vocabularyCount: state.vocabulary?.length,
+      });
+      renderAll(state);
+    });
   }
 });

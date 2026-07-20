@@ -13,13 +13,14 @@ export interface ApiFetchDependencies {
 
 const defaultDependencies: ApiFetchDependencies = {
   getBase: getApiBase,
-  fetchImpl: fetch,
+  fetchImpl: fetch.bind(globalThis),
 };
 
 export async function performApiRequest(
   request: ApiRequest,
   dependencies: ApiFetchDependencies = defaultDependencies
 ): Promise<unknown> {
+  const start = performance.now();
   const base = await dependencies.getBase();
   const init: RequestInit = { method: request.method, headers: {} };
   if (request.method !== "GET") {
@@ -27,8 +28,11 @@ export async function performApiRequest(
     init.body = JSON.stringify(request.body ?? {});
   }
 
+  console.log(`[KeepMark background] fetching ${request.method} ${request.path}`);
   const response = await dependencies.fetchImpl(`${base}${request.path}`, init);
   const text = await response.text().catch(() => "");
+  const elapsed = Math.round(performance.now() - start);
+  console.log(`[KeepMark background] fetch ${request.path} took ${elapsed}ms, status ${response.status}`);
   if (!response.ok) {
     throw new Error(
       `KeepMark API ${request.path} failed: ${response.status} ${text}`
@@ -52,18 +56,23 @@ export function handleApiMessage(
     message.type === API_REQUEST_TYPE;
   if (!isApiType) return false;
 
+  console.log(`[KeepMark background] got API message`, message);
   if (!isApiRequestMessage(message)) {
     sendResponse({ ok: false, error: "Unsupported KeepMark API request" });
     return false;
   }
 
   void executeRequest(message)
-    .then((data) => sendResponse({ ok: true, data }))
-    .catch((error) =>
+    .then((data) => {
+      console.log(`[KeepMark background] request success`, data);
+      sendResponse({ ok: true, data });
+    })
+    .catch((error) => {
+      console.error(`[KeepMark background] request failed`, error);
       sendResponse({
         ok: false,
         error: error instanceof Error ? error.message : String(error),
-      })
-    );
+      });
+    });
   return true;
 }

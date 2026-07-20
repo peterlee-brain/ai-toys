@@ -7,7 +7,7 @@ export default defineConfig({
     name: "KeepMark · 留标",
     description:
       "Read English in place: auto-translate on select, grammar on demand, keep only words you mark.",
-    version: "0.1.6",
+    version: "0.1.7",
     permissions: ["activeTab", "storage", "contextMenus", "sidePanel"],
     host_permissions: ["http://*/*", "https://*/*"],
     side_panel: {

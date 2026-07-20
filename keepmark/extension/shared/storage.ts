@@ -10,8 +10,9 @@ export async function loadState(): Promise<KeepMarkState> {
 
 export async function saveState(state: KeepMarkState): Promise<void> {
   await chrome.storage.local.set({ [STORAGE_KEY]: state });
-  await chrome.runtime.sendMessage({ type: "KEEPMARK_STATE_UPDATED" }).catch(() => {
-    /* side panel may be closed */
+  console.log("[KeepMark storage] state saved, sentence:", state.sentence?.slice(0, 40));
+  await chrome.runtime.sendMessage({ type: "KEEPMARK_STATE_UPDATED" }).catch((err) => {
+    console.log("[KeepMark storage] notify side panel failed", err);
   });
 }
 

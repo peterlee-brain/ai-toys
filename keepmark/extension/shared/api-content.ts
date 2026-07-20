@@ -41,14 +41,17 @@ export interface MarkOutput {
 
 /** Content-script API: requests are executed by the extension Service Worker. */
 export async function translate(input: TranslateInput): Promise<TranslateOutput> {
+  console.log("[KeepMark api-content] translate", input);
   return runtimeApiFetch<TranslateOutput>("POST", "/v1/translate", input);
 }
 
 export async function explainGrammar(input: GrammarInput): Promise<GrammarOutput> {
+  console.log("[KeepMark api-content] explainGrammar", input);
   return runtimeApiFetch<GrammarOutput>("POST", "/v1/grammar", input);
 }
 
 export async function recordMark(input: MarkInput): Promise<MarkOutput> {
+  console.log("[KeepMark api-content] recordMark", input);
   return runtimeApiFetch<MarkOutput>("PUT", "/v1/words/mark", input);
 }
 

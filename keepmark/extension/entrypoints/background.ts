@@ -31,10 +31,17 @@ export default defineBackground(() => {
     if (handleApiMessage(message, sendResponse)) return true;
 
     if (message?.type === "KEEPMARK_OPEN_SIDE_PANEL" && sender.tab?.id) {
+      console.log(`[KeepMark background] opening side panel for tab ${sender.tab.id}`);
       void chrome.sidePanel
         .open({ tabId: sender.tab.id })
-        .then(() => sendResponse({ ok: true }))
-        .catch(() => sendResponse({ ok: false }));
+        .then(() => {
+          console.log("[KeepMark background] side panel opened");
+          sendResponse({ ok: true });
+        })
+        .catch((err) => {
+          console.error("[KeepMark background] side panel open failed", err);
+          sendResponse({ ok: false });
+        });
       return true;
     }
     return false;

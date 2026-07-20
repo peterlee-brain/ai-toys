@@ -169,6 +169,13 @@ export default defineContentScript({
         </div>`;
     }
 
+    function renderError(message: string) {
+      refs.body.innerHTML = `
+        <p class="km-meaning" style="color:var(--km-error)">
+          ${escapeHtml(message)}
+        </p>`;
+    }
+
     function renderContent(entry: DictEntry, word: string) {
       refs.word.textContent =
         word.length > 28 ? word.slice(0, 28) + "…" : word;
@@ -287,8 +294,16 @@ export default defineContentScript({
     async function openGrammarPanel() {
       if (!state?.sentence) return;
       renderLoading();
+
+      const start = performance.now();
       try {
-        const learning = await explainGrammar({ sentence: state.sentence });
+        const timeoutMs = 30000;
+        const learning = await Promise.race([
+          explainGrammar({ sentence: state.sentence }),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error("学习请求超时，请检查网络或后端服务")), timeoutMs)
+          ),
+        ]);
         const next: KeepMarkState = {
           ...state,
           grammarReady: true,
@@ -297,19 +312,23 @@ export default defineContentScript({
           sidePanelTab: "grammar" as const,
         };
         await persist(next);
+        console.log(`[KeepMark content] grammar request took ${Math.round(performance.now() - start)}ms`);
       } catch (err) {
-        showToast("学习请求失败", "warning");
+        const message = err instanceof Error ? err.message : String(err);
+        renderError(message.includes("超时") ? "学习请求超时" : "学习请求失败");
+        showToast(message.includes("超时") ? "学习请求超时" : "学习请求失败", "warning");
         console.error("[KeepMark] grammar failed", err);
-        return;
       }
-      await chrome.runtime
-        .sendMessage({ type: "KEEPMARK_OPEN_SIDE_PANEL", tab: "grammar" })
-        .catch(() => {});
     }
 
     refs.grammar.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
+      // 同步发送打开侧边栏消息，保留用户手势上下文
+      void chrome.runtime
+        .sendMessage({ type: "KEEPMARK_OPEN_SIDE_PANEL", tab: "grammar" })
+        .catch(() => {});
+      console.log("[KeepMark content] open side panel message sent synchronously");
       void openGrammarPanel();
     });
     refs.save.addEventListener("click", (e) => {
