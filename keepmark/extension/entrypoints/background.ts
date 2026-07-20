@@ -1,3 +1,5 @@
+import { handleApiMessage } from "../shared/api-background.ts";
+
 export default defineBackground(() => {
   chrome.runtime.onInstalled.addListener(() => {
     chrome.contextMenus.create({
@@ -26,6 +28,8 @@ export default defineBackground(() => {
   });
 
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (handleApiMessage(message, sendResponse)) return true;
+
     if (message?.type === "KEEPMARK_OPEN_SIDE_PANEL" && sender.tab?.id) {
       void chrome.sidePanel
         .open({ tabId: sender.tab.id })
