@@ -1,3 +1,4 @@
+import { apiMark } from "../../shared/api";
 import { renderLearningHtml } from "../../shared/render-learning";
 import { loadState, onStateChanged, saveState } from "../../shared/storage";
 import {
@@ -21,8 +22,14 @@ document.head.appendChild(style);
 
 app.innerHTML = `
   <div class="km-panel">
-    <div class="km-demo-badge">在线模式 · 翻译、学习、留标均调用远端 KeepMark API。</div>
-    <div class="km-panel-header">KeepMark · 留标</div>
+    <div class="km-panel-header">
+      <span class="km-panel-header-title">KeepMark</span>
+      <div class="km-panel-header-toggle">
+        <span class="km-panel-header-toggle-label">选中即翻译</span>
+        <button type="button" id="toggleAuto" class="km-toggle on" aria-label="选中即翻译"></button>
+      </div>
+      <button type="button" id="btnClosePanel" class="km-btn km-btn-icon" title="关闭侧栏" aria-label="关闭侧栏">×</button>
+    </div>
     <div class="km-tabs">
       <button type="button" class="km-tab active" data-tab="grammar">学习</button>
       <button type="button" class="km-tab" data-tab="bank">词库</button>
@@ -33,14 +40,16 @@ app.innerHTML = `
           <div class="km-empty-icon">📖</div>
           在网页中选中英文后<br />点击 Popover「学习」或 <kbd>Alt+G</kbd>
         </div>
-        <div id="grammarContent" class="km-hidden"></div>
+        <div id="grammarContent" class="km-hidden">
+          <div id="grammarQuote" class="km-quote-card"></div>
+        </div>
       </div>
       <div id="panelBank" class="km-tab-panel">
         <div id="bankHeader" class="km-bank-header km-hidden"></div>
         <div id="bankList"></div>
         <div id="bankEmpty" class="km-empty">
           <div class="km-empty-icon">📚</div>
-          打开「学习」面板后<br />此处展示 Kimi 推荐的重点词汇<br /><span style="font-size:12px;color:var(--km-text-tertiary)">点击 ☆ 留标你想学的词或短语</span>
+          打开「学习」面板后<br />此处展示 Kimi 推荐的重点词汇<br /><span class="km-empty-hint">点击 ☆ 留标你想学的词或短语</span>
         </div>
       </div>
     </div>
@@ -48,9 +57,24 @@ app.innerHTML = `
 
 const grammarEmpty = document.getElementById("grammarEmpty")!;
 const grammarContent = document.getElementById("grammarContent")!;
+const grammarQuote = document.getElementById("grammarQuote")!;
 const bankHeader = document.getElementById("bankHeader")!;
 const bankList = document.getElementById("bankList")!;
 const bankEmpty = document.getElementById("bankEmpty")!;
+const toggleAuto = document.getElementById("toggleAuto")!;
+
+document.getElementById("btnClosePanel")!.addEventListener("click", () => {
+  window.close();
+});
+
+toggleAuto.addEventListener("click", () => {
+  void loadState().then(async (state) => {
+    const next = { ...state, autoTranslate: !state.autoTranslate };
+    await saveState(next);
+    toggleAuto.classList.toggle("on", next.autoTranslate);
+    chrome.runtime.sendMessage({ type: "KEEPMARK_TOGGLE_AUTO" }).catch(() => {});
+  });
+});
 
 function switchTab(tabName: "grammar" | "bank") {
   document.querySelectorAll(".km-tab").forEach((t) => {
@@ -72,17 +96,37 @@ document.querySelectorAll(".km-tab").forEach((tab) => {
   });
 });
 
+function highlightSelectionInQuote(sentence: string, selection: string): string {
+  if (!selection) return escapeHtml(sentence);
+  const idx = sentence.toLowerCase().indexOf(selection.toLowerCase());
+  if (idx === -1) return escapeHtml(sentence);
+  return (
+    escapeHtml(sentence.slice(0, idx)) +
+    "<strong>" +
+    escapeHtml(sentence.slice(idx, idx + selection.length)) +
+    "</strong>" +
+    escapeHtml(sentence.slice(idx + selection.length))
+  );
+}
+
 function renderGrammar(state: KeepMarkState) {
-  if (!state.grammarReady || !state.grammarResult) {
+  if (!state.selection || !state.grammarReady || !state.learning) {
     grammarEmpty.classList.remove("km-hidden");
     grammarContent.classList.add("km-hidden");
+    if (state.selection && !state.grammarReady) {
+      grammarEmpty.innerHTML = `
+        <div class="km-empty-icon">⏳</div>
+        正在加载学习内容…`;
+    }
     return;
   }
 
   grammarEmpty.classList.add("km-hidden");
   grammarContent.classList.remove("km-hidden");
 
-  grammarContent.innerHTML = renderLearningHtml(state.grammarResult, {
+  grammarQuote.innerHTML = highlightSelectionInQuote(state.sentence, state.selection);
+
+  grammarContent.innerHTML = renderLearningHtml(state.learning, {
     prefix: "km-",
     stream: true,
   });
@@ -99,11 +143,11 @@ function renderBank(state: KeepMarkState) {
     if (state.sentence && !state.grammarReady) {
       bankEmpty.innerHTML = `
         <div class="km-empty-icon">📚</div>
-        请先打开「学习」面板<br /><span style="font-size:12px;color:var(--km-text-tertiary)">Kimi 会推荐本句重点词汇，由你自行选择留标</span>`;
+        请先打开「学习」面板<br /><span class="km-empty-hint">Kimi 会推荐本句重点词汇，由你自行选择留标</span>`;
     } else {
       bankEmpty.innerHTML = `
         <div class="km-empty-icon">📚</div>
-        打开「学习」面板后<br />此处展示 Kimi 推荐的重点词汇<br /><span style="font-size:12px;color:var(--km-text-tertiary)">点击 ☆ 留标你想学的词或短语</span>`;
+        打开「学习」面板后<br />此处展示 Kimi 推荐的重点词汇<br /><span class="km-empty-hint">点击 ☆ 留标你想学的词或短语</span>`;
     }
     return;
   }
@@ -132,9 +176,25 @@ function renderBank(state: KeepMarkState) {
     starBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       void loadState().then(async (s) => {
-        await saveWord(s, "grammar", item.text, item.translation);
-        await saveState({ ...s });
-        renderAll(s);
+        const lemma = vocabLemma(item.text);
+        const saveKey = `${lemma}::${s.sentence.slice(0, 80)}`;
+        if (s.savedKeys.includes(saveKey)) return;
+
+        try {
+          await apiMark({
+            selection: s.selection,
+            sentence: s.sentence,
+            sentence_id: s.sentenceId,
+            lemma,
+            page_url: s.pageUrl,
+            source: "grammar",
+          });
+          saveWord(s, item.text, item.translation);
+          await saveState({ ...s });
+          renderAll(s);
+        } catch {
+          /* ignore — user sees no star change */
+        }
       });
     });
 
@@ -171,45 +231,24 @@ function renderBank(state: KeepMarkState) {
   if (state.sidePanelTab === "bank") switchTab("bank");
 }
 
-function renderAll(state: KeepMarkState) {
-  const start = performance.now();
-  renderGrammar(state);
-  renderBank(state);
-  switchTab(state.sidePanelTab);
-  console.log(`[KeepMark sidepanel] renderAll took ${Math.round(performance.now() - start)}ms`);
+function renderFooter(state: KeepMarkState) {
+  toggleAuto.classList.toggle("on", state.autoTranslate);
 }
 
-void loadState().then((state) => {
-  console.log("[KeepMark sidepanel] initial state", {
-    sentence: state.sentence?.slice(0, 40),
-    grammarReady: state.grammarReady,
-    vocabularyCount: state.vocabulary?.length,
-  });
-  renderAll(state);
-});
+function renderAll(state: KeepMarkState) {
+  renderGrammar(state);
+  renderBank(state);
+  renderFooter(state);
+  switchTab(state.sidePanelTab);
+}
 
+void loadState().then(renderAll);
 onStateChanged(() => {
-  console.log("[KeepMark sidepanel] storage changed");
-  void loadState().then((state) => {
-    console.log("[KeepMark sidepanel] re-render on change", {
-      sentence: state.sentence?.slice(0, 40),
-      grammarReady: state.grammarReady,
-      vocabularyCount: state.vocabulary?.length,
-    });
-    renderAll(state);
-  });
+  void loadState().then(renderAll);
 });
 
 chrome.runtime.onMessage.addListener((message) => {
   if (message?.type === "KEEPMARK_STATE_UPDATED") {
-    console.log("[KeepMark sidepanel] KEEPMARK_STATE_UPDATED received");
-    void loadState().then((state) => {
-      console.log("[KeepMark sidepanel] re-render on message", {
-        sentence: state.sentence?.slice(0, 40),
-        grammarReady: state.grammarReady,
-        vocabularyCount: state.vocabulary?.length,
-      });
-      renderAll(state);
-    });
+    void loadState().then(renderAll);
   }
 });

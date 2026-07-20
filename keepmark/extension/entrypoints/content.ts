@@ -1,17 +1,26 @@
-import { toDictEntry, translate, explainGrammar } from "../shared/api-content";
-import type { DictEntry, KeepMarkState } from "../shared/types";
-import uiStyles from "../assets/styles/ui.css?inline";
+import {
+  apiGrammar,
+  apiMark,
+  apiTranslate,
+  formatApiError,
+  grammarToLearning,
+  type TranslateResponse,
+} from "../shared/api";
 import { loadState, saveState } from "../shared/storage";
 import {
   getSaveKey,
   saveWord,
+  vocabLemma,
 } from "../shared/state-logic";
 import {
   escapeHtml,
   extractSentence,
   getContext,
   hasEnglishText,
+  isFullSentenceSelection,
 } from "../shared/text-utils";
+import type { KeepMarkState } from "../shared/types";
+import uiStyles from "../assets/styles/ui.css?inline";
 
 interface SelectionSnapshot {
   text: string;
@@ -169,27 +178,24 @@ export default defineContentScript({
         </div>`;
     }
 
-    function renderError(message: string) {
-      refs.body.innerHTML = `
-        <p class="km-meaning" style="color:var(--km-error)">
-          ${escapeHtml(message)}
-        </p>`;
-    }
-
-    function renderContent(entry: DictEntry, word: string) {
+    function renderContent(entry: TranslateResponse) {
       refs.word.textContent =
-        word.length > 28 ? word.slice(0, 28) + "…" : word;
+        entry.word.length > 28 ? entry.word.slice(0, 28) + "…" : entry.word;
+      const collocation = entry.collocation
+        ? `<p class="km-collocation">${escapeHtml(entry.collocation)}</p>`
+        : "";
       refs.body.innerHTML = `
         <p class="km-meaning">
           <span class="km-pos-tag">${escapeHtml(entry.pos)}</span>${escapeHtml(entry.meaning)}
-        </p>`;
+        </p>
+        ${collocation}
+        <p class="km-seen-count">全库出现 ${entry.seen_count} 次${entry.from_cache ? " · 缓存" : ""}</p>`;
     }
 
-    async function openTranslate(force = false) {
-      if (!state?.selection) return;
-      if (!state.autoTranslate && !force) return;
+    async function fetchTranslate(force = false) {
+      if (!state?.selection || !state.sentence) return;
 
-      const requestKey = state.selection.trim();
+      const requestKey = `${state.selection.trim()}::${state.sentence.slice(0, 80)}`;
       if (!force && popoverOpen && lastRequestKey === requestKey) {
         updateSaveButton();
         return;
@@ -206,30 +212,33 @@ export default defineContentScript({
           : state.selection;
 
       try {
-        const out = await translate({
+        const entry = await apiTranslate({
           selection: state.selection,
           sentence: state.sentence,
+          page_url: state.pageUrl,
         });
-        if (state) {
-          await persist({
-            ...state,
-            lastTranslate: {
-              word: state.selection,
-              pos: out.pos,
-              meaning: out.translation,
-              lemma: out.lemma,
-            },
-          });
-        }
-        renderContent(toDictEntry(out), state.selection);
+        state = {
+          ...state,
+          lemma: entry.lemma,
+          sentenceId: entry.sentence_id,
+        };
+        renderContent(entry);
+        void persist(state);
       } catch (err) {
-        refs.body.innerHTML = `
-          <p class="km-meaning" style="color:var(--km-text-secondary)">
-            翻译失败，请稍后重试
-          </p>`;
-        showToast("翻译失败", "warning");
-        console.error("[KeepMark] translate failed", err);
+        refs.body.innerHTML = `<p class="km-meaning km-error">${escapeHtml(
+          formatApiError(err)
+        )}</p>`;
       }
+    }
+
+    function openTranslate(force = false) {
+      if (!state?.selection) return;
+      if (!state.autoTranslate && !force) return;
+
+      if (translateTimer) clearTimeout(translateTimer);
+      translateTimer = setTimeout(() => {
+        void fetchTranslate(force);
+      }, 250);
     }
 
     function scheduleSelectionCheck() {
@@ -268,10 +277,27 @@ export default defineContentScript({
         pageTitle: document.title,
         grammarReady: false,
         vocabulary: [],
-        sidePanelTab: "bank",
+        learning: null,
+        lemma: "",
+        sentenceId: "",
       };
 
       state = next;
+
+      if (isFullSentenceSelection(snap.text, sentence)) {
+        hidePopover();
+        const grammarState: KeepMarkState = {
+          ...next,
+          sidePanelTab: "grammar",
+          grammarReady: false,
+          learning: null,
+          vocabulary: [],
+        };
+        state = grammarState;
+        await persist(grammarState);
+        void openGrammarPanel();
+        return;
+      }
 
       if (next.autoTranslate) openTranslate();
 
@@ -280,44 +306,82 @@ export default defineContentScript({
 
     async function handleSave() {
       if (!state) state = await loadState();
-      const result = await saveWord(state, "translate");
-      if (!result.ok) {
-        showToast(result.message, result.type);
+
+      const saveKey = getSaveKey(state);
+      if (saveKey && state.savedKeys.includes(saveKey)) {
+        showToast(`已在本句记录过「${state.selection.trim()}」`, "warning");
         updateSaveButton();
         return;
       }
-      await persist({ ...state });
-      showToast(result.message, result.type);
-      updateSaveButton();
+
+      const lemma =
+        state.lemma || vocabLemma(state.selection) || state.selection.trim();
+
+      try {
+        const res = await apiMark({
+          selection: state.selection,
+          sentence: state.sentence,
+          sentence_id: state.sentenceId,
+          lemma,
+          page_url: state.pageUrl,
+          source: "translate",
+        });
+        const result = saveWord(state);
+        if (!result.ok) {
+          showToast(result.message, result.type);
+          updateSaveButton();
+          return;
+        }
+        await persist({ ...state });
+        showToast(res.message || result.message, result.type);
+        updateSaveButton();
+      } catch (err) {
+        showToast(formatApiError(err), "warning");
+      }
     }
 
     async function openGrammarPanel() {
-      if (!state?.sentence) return;
-      renderLoading();
+      if (!state?.selection || !state.sentence) return;
+
+      hidePopover();
+      refs.grammar.disabled = true;
+
+      const loading = {
+        ...state,
+        grammarReady: false,
+        sidePanelTab: "grammar" as const,
+      };
+      state = loading;
+      await persist(loading);
 
       const start = performance.now();
       try {
         const timeoutMs = 30000;
-        const learning = await Promise.race([
-          explainGrammar({ sentence: state.sentence }),
+        const res = await Promise.race([
+          apiGrammar({
+            selection: state.selection,
+            sentence: state.sentence,
+            page_url: state.pageUrl,
+          }),
           new Promise<never>((_, reject) =>
             setTimeout(() => reject(new Error("学习请求超时，请检查网络或后端服务")), timeoutMs)
           ),
         ]);
-        const next: KeepMarkState = {
+        const learning = grammarToLearning(res);
+        const next = {
           ...state,
           grammarReady: true,
+          learning,
           vocabulary: learning.vocabulary,
-          grammarResult: learning,
+          sentenceId: res.sentence_id,
           sidePanelTab: "grammar" as const,
         };
         await persist(next);
         console.log(`[KeepMark content] grammar request took ${Math.round(performance.now() - start)}ms`);
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        renderError(message.includes("超时") ? "学习请求超时" : "学习请求失败");
-        showToast(message.includes("超时") ? "学习请求超时" : "学习请求失败", "warning");
-        console.error("[KeepMark] grammar failed", err);
+        showToast(formatApiError(err), "warning");
+      } finally {
+        refs.grammar.disabled = false;
       }
     }
 
@@ -420,8 +484,8 @@ export default defineContentScript({
             selection: String(message.text),
             sentence,
             grammarReady: false,
+            learning: null,
             vocabulary: [],
-            grammarResult: undefined,
             sidePanelTab: "grammar",
           };
           await persist(state);

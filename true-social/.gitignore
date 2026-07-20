@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+backend/vendor/
+
+# Build outputs
+dist/
+build/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Bird CLI credentials (never commit)
+.birdrc.json5
+docs/.bird-credentials.env
+docs/bird-cli-integration-tests.last-run.md
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Go
+*.test
+*.out
+coverage.txt
+
+# Backend binaries
+backend/socialtool
+backend/worker
+backend/svc-kline
+
+# Frontend cache
+frontend/.vite/

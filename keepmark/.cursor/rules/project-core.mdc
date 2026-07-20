@@ -1,0 +1,21 @@
+---
+description: KeepMark 子项目核心
+alwaysApply: true
+---
+
+# KeepMark
+
+项目根：`keepmark/`。
+
+## 写代码前
+
+1. [AGENTS.md](../AGENTS.md)
+2. [spec/README.md](../spec/README.md) — Agent 约束
+3. [PLAN.md](../PLAN.md)
+
+## 禁止
+
+- 无 PLAN 写业务代码
+- 跳过 spec 改 API/DB/UI
+
+话术：[DEVELOP.md](../../DEVELOP.md)

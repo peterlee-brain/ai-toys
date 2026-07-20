@@ -1,0 +1,31 @@
+---
+description: Memory Bank — 仅存在于各子项目内
+alwaysApply: true
+---
+
+# Memory Bank
+
+**只在子项目里**，仓库根 **没有** memory-bank。
+
+路径：`<project>/memory-bank/`
+
+## 写子项目代码前
+
+读 **当前子项目** memory-bank 全套：
+
+- `architecture.md`
+- `tech-stack.md`
+- `implementation-plan.md`
+- `progress.md`
+
+参考结构：[keepmark/memory-bank/](../keepmark/memory-bank/)
+
+## 交付后
+
+更新 **该子项目** 的 `progress.md` 与 `implementation-plan.md`。
+
+## 新增子项目
+
+在根 [README.md](../README.md) 子项目表登记；复制 keepmark 的 memory-bank 结构。
+
+规格与代码冲突：**先改 memory-bank 或 PLAN，再改代码**。

@@ -44,6 +44,28 @@ export function hasEnglishText(text: string): boolean {
   return /[a-zA-Z]/.test(text);
 }
 
+function normalizeContextText(text: string): string {
+  return text.replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+/** 用户是否选中了完整句子（此时走 Side Panel，不弹 Popover） */
+export function isFullSentenceSelection(selection: string, sentence: string): boolean {
+  const sel = selection.trim();
+  if (!sel || !/\s/.test(sel)) return false;
+
+  const sent = sentence.trim();
+  const selNorm = normalizeContextText(sel);
+  const sentNorm = normalizeContextText(sent);
+
+  if (/[.!?]["')\]]*\s*$/.test(sel)) return true;
+  if (selNorm === sentNorm) return true;
+  if (sentNorm.startsWith(selNorm) && sentNorm.length - selNorm.length <= 2) {
+    return true;
+  }
+
+  return false;
+}
+
 export function highlightInSentence(sentence: string, word: string): string {
   const w = normalizeWord(word) || word;
   const re = new RegExp(`(${w})`, "i");

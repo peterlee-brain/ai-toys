@@ -1,0 +1,40 @@
+---
+description: Spec-first — 前端项目规格先于代码
+alwaysApply: true
+---
+
+# Spec First
+
+```
+spec/*.md → code → design
+```
+
+## 写代码前必须读
+
+1. `AGENTS.md`
+2. `spec/README.md` — Agent 约束
+3. `spec/architecture.md` — 总纲
+4. `spec/product.md` — 业务边界
+
+## 修改顺序
+
+| 变更 | 先更新 | 再更新 | 最后 |
+|------|--------|--------|------|
+| 产品范围 | `spec/product.md` | `spec/architecture.md` | `src/` 代码 |
+| UI 面 | `spec/surfaces/*.md` | `design/` 设计稿 | `src/` 代码 |
+| 状态字段 | `spec/architecture.md` + `spec/type-contracts.md` | `src/` 类型定义 | 对应 `spec/surfaces/*.md` |
+| API 调用字段 | 后端 `api.md` | `spec/type-contracts.md` | `src/api*.ts` + `spec/surfaces/*.md` |
+| 样式类名 | `spec/surfaces/*.md` | `design/` | `src/styles/*` |
+
+## 禁止
+
+- 跳过 `spec/` 直接写业务代码
+- 在 `spec/` 写后端实现/数据库/服务端分层
+- 硬编码密钥
+- 改代码后不同步 `spec/` 或 `design/`
+
+## 真源
+
+- UI 行为：`spec/surfaces/*.md`
+- API 字段：后端 `api.md`
+- 设计稿：冲突时以 `spec/surfaces/*.md` 为准

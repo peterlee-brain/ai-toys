@@ -1,0 +1,37 @@
+---
+description: VibeCoding 核心工作流 — 仓库级通用（AI Toys）
+alwaysApply: true
+---
+
+# VibeCoding 核心规范（仓库级）
+
+仓库根：`ai-toys/`。本规则 **只约束通用流程**，不含任何子项目细节。
+
+## 写代码前
+
+1. 确认 **当前子项目**（一次只做一个）
+2. 读该子项目的 `AGENTS.md` → `memory-bank/`
+3. 读该子项目的 `PLAN.md`；**无 PLAN 禁止写业务代码**
+
+新项目可参考 [keepmark/memory-bank/](../keepmark/memory-bank/) 的文档结构。
+
+## 三段式
+
+| 阶段 | 允许 | 禁止 |
+|------|------|------|
+| Ask | 需求澄清、方案对比 | 业务代码 |
+| Plan | 写/更新子项目 PLAN.md | 跳过规划 |
+| Code | PLAN 当前单步 | 跨子项目、多步同做 |
+
+## 通用纪律
+
+- 一次一步；提示词含「目标 + 非目标 + 子项目名 + 约束」
+- 奥卡姆剃刀；模块化，禁止单体巨文件
+- 一功能一会话；完成后更新 **子项目** `memory-bank/progress.md`
+
+## 人机分工
+
+- **人**：架构、选型、验收、merge
+- **AI**：实现、测试草稿；**人审断言与逻辑**
+
+SOP：`docs/vibecoding/SOP.md`

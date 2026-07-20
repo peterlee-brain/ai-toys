@@ -1,4 +1,4 @@
-import { recordMark } from "./api-content";
+import { lookupEntry } from "./mock-dict";
 import { normalizeWord } from "./text-utils";
 import type { KeepMarkState } from "./types";
 
@@ -24,18 +24,19 @@ export interface SaveResult {
   type: "success" | "warning";
 }
 
-export async function saveWord(
+export function saveWord(
   state: KeepMarkState,
-  source: "translate" | "grammar",
   wordOverride?: string,
   meaningOverride?: string
-): Promise<SaveResult> {
+): SaveResult {
   const targetWord = wordOverride || state.selection;
   if (!targetWord || !state.sentence) {
     return { ok: false, message: "请先选中英文", type: "warning" };
   }
 
   const lemma = vocabLemma(targetWord) || normalizeWord(targetWord);
+  const meaning =
+    meaningOverride?.trim() || lookupEntry(targetWord).meaning;
   const key = `${lemma}::${state.sentence.slice(0, 80)}`;
 
   if (state.savedKeys.includes(key)) {
@@ -46,42 +47,28 @@ export async function saveWord(
     };
   }
 
-  try {
-    const out = await recordMark({
-      lemma,
-      source,
-      sentence: state.sentence,
-    });
+  state.savedKeys.push(key);
+  if (!state.markedLemmas.includes(lemma)) {
+    state.markedLemmas.push(lemma);
+  }
 
-    state.savedKeys.push(key);
-    if (!state.markedLemmas.includes(lemma)) {
-      state.markedLemmas.push(lemma);
-    }
-
-    const meaning = meaningOverride?.trim() || state.lastTranslate?.meaning || "";
-    if (!state.bank[lemma]) {
-      state.bank[lemma] = {
-        lemma: targetWord.trim(),
-        meaning,
-        count: out.mark_count,
-      };
-      state.stats.new += 1;
-      state.stats.review += 1;
-    } else {
-      state.bank[lemma].count = out.mark_count;
-    }
-
+  if (!state.bank[lemma]) {
+    state.bank[lemma] = {
+      lemma: targetWord.trim(),
+      meaning,
+      count: 1,
+    };
     return {
       ok: true,
-      message: `${out.message}（累计 ${out.mark_count} 次）`,
+      message: `已留标「${targetWord.trim()}」`,
       type: "success",
     };
-  } catch (err) {
-    console.error("[KeepMark] mark failed", err);
-    return {
-      ok: false,
-      message: "留标失败，请稍后重试",
-      type: "warning",
-    };
   }
+
+  state.bank[lemma].count += 1;
+  return {
+    ok: true,
+    message: `已记录「${targetWord.trim()}」的新语境`,
+    type: "success",
+  };
 }

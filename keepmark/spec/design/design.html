@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>KeepMark · 交互设计稿</title>
+    <link rel="stylesheet" href="../../extension/assets/styles/ui.css" />
+    <link rel="stylesheet" href="./design-page.css" />
+  </head>
+  <body>
+    <div class="design-shell">
+      <aside class="design-nav" aria-label="设计稿导航">
+        <h1>KeepMark 设计稿</h1>
+        <p>
+          交互预览 · 点击工具栏图标打开 Side Panel<br />
+          在文章中 <strong>拖选英文</strong> 体验完整流程
+        </p>
+        <a href="#scene" data-nav="scroll">阅读场景</a>
+        <a href="#sidepanel-grammar" data-nav="sidepanel" data-tab="grammar">Side Panel · 学习</a>
+        <a href="#sidepanel-bank" data-nav="sidepanel" data-tab="bank">Side Panel · 词库</a>
+      </aside>
+
+      <div class="design-workspace">
+        <main class="design-main">
+          <section id="scene" class="design-section design-section-hero">
+            <div class="design-scene-bar">
+              <span>拖选单词 → Popover · 拖选整句 → Side Panel 学习 · ☆ 留标</span>
+              <div class="design-scene-actions">
+                <button type="button" class="design-chip" id="btnReopenPanel">打开 Side Panel</button>
+                <button type="button" class="design-chip" data-demo-toast="已留标 notwithstanding">预览成功 Toast</button>
+                <button type="button" class="design-chip" data-demo-toast="请先选中英文句子" data-type="warning">预览警告 Toast</button>
+              </div>
+            </div>
+            <div class="design-canvas muted-bg design-canvas-scene">
+              <div class="mock-scene" id="mockScene">
+                <article class="mock-page" id="mockArticle">
+                  <h3 class="mock-article-title">Contract Law Weekly</h3>
+                  <p>
+                    The court ruled that the defendant's actions,
+                    notwithstanding prior warnings, constituted a breach of contract.
+                  </p>
+                  <p>
+                    Although many investors understand that patience is essential,
+                    they often make impulsive decisions when the market becomes volatile,
+                    which can seriously damage their long-term returns.
+                  </p>
+                </article>
+
+                <div class="mock-popover-layer km-hidden" id="mockPopoverLayer">
+                  <div class="km-popover">
+                    <div class="km-popover-header">
+                      <p class="word-title" id="popoverWord">—</p>
+                      <div class="km-popover-actions">
+                        <button type="button" class="km-btn km-btn-outline" id="btnLearn">学习</button>
+                        <button type="button" class="km-btn km-btn-outline km-btn-save-star" id="btnSave" title="留标">☆</button>
+                        <button type="button" class="km-btn km-btn-icon" id="btnClose" title="关闭">×</button>
+                      </div>
+                    </div>
+                    <div class="km-popover-body" id="popoverBody"></div>
+                  </div>
+                </div>
+
+                <div class="mock-toast-layer" id="mockToastLayer">
+                  <div class="km-toast-wrap km-hidden" id="mockToastWrap">
+                    <div class="km-toast" id="mockToast">
+                      <span id="mockToastText"></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </main>
+
+        <aside class="design-sidepanel" id="designSidepanel" aria-label="Side Panel">
+          <div class="km-panel" id="sidePanel">
+            <div class="km-panel-header">
+              <span class="km-panel-header-title">KeepMark</span>
+              <div class="km-panel-header-toggle">
+                <span class="km-panel-header-toggle-label">选中即翻译</span>
+                <button type="button" class="km-toggle on" id="toggleAuto" aria-label="选中即翻译"></button>
+              </div>
+              <button type="button" class="km-btn km-btn-icon" id="btnClosePanel" title="关闭侧栏" aria-label="关闭侧栏">×</button>
+            </div>
+            <div class="km-tabs">
+              <button type="button" class="km-tab active" data-tab="grammar">学习</button>
+              <button type="button" class="km-tab" data-tab="bank">词库</button>
+            </div>
+            <div class="km-side-body">
+              <div id="panelGrammar" class="km-tab-panel active">
+                <div id="grammarEmpty" class="km-empty">
+                  <div class="km-empty-icon">📖</div>
+                  <p>选中文章中的英文后，点击 Popover「学习」查看语法讲解</p>
+                </div>
+                <div id="grammarContent" class="km-hidden">
+                  <div class="km-quote-card" id="grammarQuote"></div>
+                  <div id="grammarLearning"></div>
+                </div>
+              </div>
+
+              <div id="panelBank" class="km-tab-panel">
+                <div id="bankEmpty" class="km-empty">
+                  <div class="km-empty-icon">📚</div>
+                  <p>进入「学习」后，句内词库将显示在这里</p>
+                </div>
+                <div id="bankHeader" class="km-bank-header km-hidden"></div>
+                <div id="bankList"></div>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+    <script src="./design-interactive.js"></script>
+  </body>
+</html>
