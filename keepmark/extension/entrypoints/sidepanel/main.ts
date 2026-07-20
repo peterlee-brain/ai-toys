@@ -1,4 +1,3 @@
-import { getMockLearning } from "../../shared/mock-learning";
 import { renderLearningHtml } from "../../shared/render-learning";
 import { loadState, onStateChanged, saveState } from "../../shared/storage";
 import {
@@ -22,7 +21,7 @@ document.head.appendChild(style);
 
 app.innerHTML = `
   <div class="km-panel">
-    <div class="km-demo-badge">演示模式 · 翻译为本地 mock；学习面板展示 Kimi JSON 结构 mock，留标保存在浏览器本地。</div>
+    <div class="km-demo-badge">在线模式 · 翻译、学习、留标均调用远端 KeepMark API。</div>
     <div class="km-panel-header">KeepMark · 留标</div>
     <div class="km-tabs">
       <button type="button" class="km-tab active" data-tab="grammar">学习</button>
@@ -74,17 +73,16 @@ document.querySelectorAll(".km-tab").forEach((tab) => {
 });
 
 function renderGrammar(state: KeepMarkState) {
-  if (!state.selection || !state.grammarReady) {
+  if (!state.grammarReady || !state.grammarResult) {
     grammarEmpty.classList.remove("km-hidden");
     grammarContent.classList.add("km-hidden");
     return;
   }
 
-  const learning = getMockLearning(state.sentence, state.selection);
   grammarEmpty.classList.add("km-hidden");
   grammarContent.classList.remove("km-hidden");
 
-  grammarContent.innerHTML = renderLearningHtml(learning, {
+  grammarContent.innerHTML = renderLearningHtml(state.grammarResult, {
     prefix: "km-",
     stream: true,
   });
@@ -134,7 +132,7 @@ function renderBank(state: KeepMarkState) {
     starBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       void loadState().then(async (s) => {
-        saveWord(s, item.text, item.translation);
+        await saveWord(s, "grammar", item.text, item.translation);
         await saveState({ ...s });
         renderAll(s);
       });

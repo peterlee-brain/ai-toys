@@ -1,4 +1,4 @@
-import type { VocabItem } from "./learning-types";
+import type { LearningResult, VocabItem } from "./learning-types";
 
 export interface DictEntry {
   pos: string;
@@ -26,6 +26,10 @@ export interface KeepMarkState {
   grammarReady: boolean;
   /** Kimi 推荐的重点词汇，打开学习面板后填充 */
   vocabulary: VocabItem[];
+  /** 最近一次 grammar API 返回的完整学习结果 */
+  grammarResult?: LearningResult;
+  /** 最近一次 translate API 返回的摘要，用于 Popover 留标时补 meaning */
+  lastTranslate?: { word: string; pos: string; meaning: string; lemma: string };
   pageUrl: string;
   pageTitle: string;
   expandedBankLemma: string;

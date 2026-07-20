@@ -6,9 +6,10 @@ export default defineConfig({
   manifest: {
     name: "KeepMark · 留标",
     description:
-      "Read English in place: auto-translate on select, grammar on demand, keep only words you mark. (Demo / mock data)",
-    version: "0.1.1",
+      "Read English in place: auto-translate on select, grammar on demand, keep only words you mark.",
+    version: "0.1.6",
     permissions: ["activeTab", "storage", "contextMenus", "sidePanel"],
+    host_permissions: ["http://*/*", "https://*/*"],
     side_panel: {
       default_path: "sidepanel.html",
     },

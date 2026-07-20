@@ -1,8 +1,8 @@
 {
   "name": "keepmark-extension",
-  "version": "0.1.1",
+  "version": "0.1.6",
   "private": true,
-  "description": "KeepMark · 留标 — Chrome extension (mock data demo)",
+  "description": "KeepMark · 留标 — HTTP via extension Service Worker proxy",
   "type": "module",
   "scripts": {
     "dev": "wxt",

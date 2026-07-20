@@ -1,5 +1,6 @@
-import { lookupEntry } from "../shared/mock-dict";
-import { getMockLearning } from "../shared/mock-learning";
+import { toDictEntry, translate, explainGrammar } from "../shared/api-content";
+import type { DictEntry, KeepMarkState } from "../shared/types";
+import uiStyles from "../assets/styles/ui.css?inline";
 import { loadState, saveState } from "../shared/storage";
 import {
   getSaveKey,
@@ -11,8 +12,6 @@ import {
   getContext,
   hasEnglishText,
 } from "../shared/text-utils";
-import type { KeepMarkState } from "../shared/types";
-import uiStyles from "../assets/styles/ui.css?inline";
 
 interface SelectionSnapshot {
   text: string;
@@ -170,16 +169,16 @@ export default defineContentScript({
         </div>`;
     }
 
-    function renderContent(entry: ReturnType<typeof lookupEntry>) {
+    function renderContent(entry: DictEntry, word: string) {
       refs.word.textContent =
-        entry.word.length > 28 ? entry.word.slice(0, 28) + "…" : entry.word;
+        word.length > 28 ? word.slice(0, 28) + "…" : word;
       refs.body.innerHTML = `
         <p class="km-meaning">
           <span class="km-pos-tag">${escapeHtml(entry.pos)}</span>${escapeHtml(entry.meaning)}
         </p>`;
     }
 
-    function openTranslate(force = false) {
+    async function openTranslate(force = false) {
       if (!state?.selection) return;
       if (!state.autoTranslate && !force) return;
 
@@ -199,9 +198,31 @@ export default defineContentScript({
           ? state.selection.slice(0, 28) + "…"
           : state.selection;
 
-      const entry = lookupEntry(state.selection);
-      if (translateTimer) clearTimeout(translateTimer);
-      translateTimer = setTimeout(() => renderContent(entry), 250);
+      try {
+        const out = await translate({
+          selection: state.selection,
+          sentence: state.sentence,
+        });
+        if (state) {
+          await persist({
+            ...state,
+            lastTranslate: {
+              word: state.selection,
+              pos: out.pos,
+              meaning: out.translation,
+              lemma: out.lemma,
+            },
+          });
+        }
+        renderContent(toDictEntry(out), state.selection);
+      } catch (err) {
+        refs.body.innerHTML = `
+          <p class="km-meaning" style="color:var(--km-text-secondary)">
+            翻译失败，请稍后重试
+          </p>`;
+        showToast("翻译失败", "warning");
+        console.error("[KeepMark] translate failed", err);
+      }
     }
 
     function scheduleSelectionCheck() {
@@ -252,7 +273,7 @@ export default defineContentScript({
 
     async function handleSave() {
       if (!state) state = await loadState();
-      const result = saveWord(state);
+      const result = await saveWord(state, "translate");
       if (!result.ok) {
         showToast(result.message, result.type);
         updateSaveButton();
@@ -264,15 +285,23 @@ export default defineContentScript({
     }
 
     async function openGrammarPanel() {
-      if (!state?.selection) return;
-      const learning = getMockLearning(state.sentence, state.selection);
-      const next = {
-        ...state,
-        grammarReady: true,
-        vocabulary: learning.vocabulary,
-        sidePanelTab: "grammar" as const,
-      };
-      await persist(next);
+      if (!state?.sentence) return;
+      renderLoading();
+      try {
+        const learning = await explainGrammar({ sentence: state.sentence });
+        const next: KeepMarkState = {
+          ...state,
+          grammarReady: true,
+          vocabulary: learning.vocabulary,
+          grammarResult: learning,
+          sidePanelTab: "grammar" as const,
+        };
+        await persist(next);
+      } catch (err) {
+        showToast("学习请求失败", "warning");
+        console.error("[KeepMark] grammar failed", err);
+        return;
+      }
       await chrome.runtime
         .sendMessage({ type: "KEEPMARK_OPEN_SIDE_PANEL", tab: "grammar" })
         .catch(() => {});
@@ -367,13 +396,13 @@ export default defineContentScript({
       if (message?.type === "KEEPMARK_FORCE_GRAMMAR" && message.text) {
         void loadState().then(async (s) => {
           const sentence = extractSentence(String(message.text), pageRootText());
-          const learning = getMockLearning(sentence, String(message.text));
           state = {
             ...s,
             selection: String(message.text),
             sentence,
-            grammarReady: true,
-            vocabulary: learning.vocabulary,
+            grammarReady: false,
+            vocabulary: [],
+            grammarResult: undefined,
             sidePanelTab: "grammar",
           };
           await persist(state);
