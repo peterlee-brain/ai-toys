@@ -85,12 +85,10 @@ export const DICT: Record<string, DictEntry> = {
   long: { pos: "adj.", meaning: "长期的" },
   term: { pos: "n.", meaning: "期限；术语" },
   they: { pos: "pron.", meaning: "他们" },
-  often: { pos: "adv.", meaning: "经常" },
   make: { pos: "v.", meaning: "做；做出" },
   becomes: { pos: "v.", meaning: "变得" },
   seriously: { pos: "adv.", meaning: "严重地" },
   can: { pos: "v.", meaning: "能够" },
-  their: { pos: "pron.", meaning: "他们的" },
 };
 
 export interface LookupResult extends DictEntry {
