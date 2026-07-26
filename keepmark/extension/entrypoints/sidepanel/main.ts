@@ -40,8 +40,16 @@ app.innerHTML = `
           <div class="km-empty-icon">📖</div>
           在网页中选中英文后<br />点击 Popover「学习」或 <kbd>Alt+G</kbd>
         </div>
+        <div id="grammarLoading" class="km-empty km-hidden">
+          <div class="km-empty-icon">⏳</div>
+          <p>正在加载学习内容…</p>
+          <p class="km-load-timer">已用时 <span id="grammarLoadTimer">0.0</span>s</p>
+          <div class="km-load-sentence km-hidden" id="grammarLoadSentence"></div>
+        </div>
         <div id="grammarContent" class="km-hidden">
-          <div id="grammarQuote" class="km-quote-card"></div>
+          <div class="km-block-title">原文</div>
+          <div class="km-quote-card" id="grammarQuote"></div>
+          <div id="grammarLearning"></div>
         </div>
       </div>
       <div id="panelBank" class="km-tab-panel">
@@ -56,12 +64,19 @@ app.innerHTML = `
   </div>`;
 
 const grammarEmpty = document.getElementById("grammarEmpty")!;
+const grammarLoading = document.getElementById("grammarLoading")!;
 const grammarContent = document.getElementById("grammarContent")!;
 const grammarQuote = document.getElementById("grammarQuote")!;
+const grammarLearning = document.getElementById("grammarLearning")!;
+const grammarLoadTimer = document.getElementById("grammarLoadTimer")!;
+const grammarLoadSentence = document.getElementById("grammarLoadSentence")!;
 const bankHeader = document.getElementById("bankHeader")!;
 const bankList = document.getElementById("bankList")!;
 const bankEmpty = document.getElementById("bankEmpty")!;
 const toggleAuto = document.getElementById("toggleAuto")!;
+
+let loadingTimer: ReturnType<typeof setInterval> | null = null;
+let loadingStartedAt = 0;
 
 document.getElementById("btnClosePanel")!.addEventListener("click", () => {
   window.close();
@@ -109,24 +124,72 @@ function highlightSelectionInQuote(sentence: string, selection: string): string 
   );
 }
 
+function stopGrammarLoadingTimer() {
+  if (loadingTimer) {
+    clearInterval(loadingTimer);
+    loadingTimer = null;
+  }
+}
+
+function startGrammarLoadingTimer() {
+  stopGrammarLoadingTimer();
+  loadingStartedAt = Date.now();
+  grammarLoadTimer.textContent = "0.0";
+  loadingTimer = setInterval(() => {
+    grammarLoadTimer.textContent = ((Date.now() - loadingStartedAt) / 1000).toFixed(1);
+  }, 100);
+}
+
+function showGrammarLoading(sentence: string) {
+  grammarEmpty.classList.add("km-hidden");
+  grammarContent.classList.add("km-hidden");
+  grammarLoading.classList.remove("km-hidden");
+  if (sentence) {
+    grammarLoadSentence.textContent = sentence;
+    grammarLoadSentence.classList.remove("km-hidden");
+  } else {
+    grammarLoadSentence.classList.add("km-hidden");
+  }
+  // 状态可能多次推送；计时器只开一次，避免反复归零
+  if (!loadingTimer) startGrammarLoadingTimer();
+}
+
+function showGrammarEmpty() {
+  stopGrammarLoadingTimer();
+  grammarLoading.classList.add("km-hidden");
+  grammarContent.classList.add("km-hidden");
+  grammarEmpty.classList.remove("km-hidden");
+  grammarEmpty.innerHTML = `
+    <div class="km-empty-icon">📖</div>
+    在网页中选中英文后<br />点击 Popover「学习」或 <kbd>Alt+G</kbd>`;
+}
+
 function renderGrammar(state: KeepMarkState) {
-  if (!state.selection || !state.grammarReady || !state.learning) {
-    grammarEmpty.classList.remove("km-hidden");
-    grammarContent.classList.add("km-hidden");
-    if (state.selection && !state.grammarReady) {
-      grammarEmpty.innerHTML = `
-        <div class="km-empty-icon">⏳</div>
-        正在加载学习内容…`;
-    }
+  if (state.grammarLoading) {
+    showGrammarLoading(state.sentence || state.selection);
+    if (state.sidePanelTab === "grammar") switchTab("grammar");
     return;
   }
 
+  if (!state.learning) {
+    showGrammarEmpty();
+    if (state.selection && state.grammarReady) {
+      // 有选区但未点「学习」：保持空态提示，不进入加载
+      grammarEmpty.innerHTML = `
+        <div class="km-empty-icon">📖</div>
+        在网页中选中英文后<br />点击 Popover「学习」或 <kbd>Alt+G</kbd>`;
+    }
+    if (state.sidePanelTab === "grammar") switchTab("grammar");
+    return;
+  }
+
+  stopGrammarLoadingTimer();
   grammarEmpty.classList.add("km-hidden");
+  grammarLoading.classList.add("km-hidden");
   grammarContent.classList.remove("km-hidden");
 
   grammarQuote.innerHTML = highlightSelectionInQuote(state.sentence, state.selection);
-
-  grammarContent.innerHTML = renderLearningHtml(state.learning, {
+  grammarLearning.innerHTML = renderLearningHtml(state.learning, {
     prefix: "km-",
     stream: true,
   });
@@ -137,18 +200,21 @@ function renderGrammar(state: KeepMarkState) {
 function renderBank(state: KeepMarkState) {
   bankList.innerHTML = "";
 
-  if (!state.grammarReady || state.vocabulary.length === 0) {
+  if (state.grammarLoading) {
     bankHeader.classList.add("km-hidden");
     bankEmpty.classList.remove("km-hidden");
-    if (state.sentence && !state.grammarReady) {
-      bankEmpty.innerHTML = `
-        <div class="km-empty-icon">📚</div>
-        请先打开「学习」面板<br /><span class="km-empty-hint">Kimi 会推荐本句重点词汇，由你自行选择留标</span>`;
-    } else {
-      bankEmpty.innerHTML = `
-        <div class="km-empty-icon">📚</div>
-        打开「学习」面板后<br />此处展示 Kimi 推荐的重点词汇<br /><span class="km-empty-hint">点击 ☆ 留标你想学的词或短语</span>`;
-    }
+    bankEmpty.innerHTML = `
+      <div class="km-empty-icon">📚</div>
+      正在加载句内词库…`;
+    return;
+  }
+
+  if (!state.learning || state.vocabulary.length === 0) {
+    bankHeader.classList.add("km-hidden");
+    bankEmpty.classList.remove("km-hidden");
+    bankEmpty.innerHTML = `
+      <div class="km-empty-icon">📚</div>
+      点击 Popover「学习」后<br />此处展示本句重点词汇<br /><span class="km-empty-hint">点击 ☆ 留标你想学的词或短语</span>`;
     return;
   }
 
@@ -182,12 +248,9 @@ function renderBank(state: KeepMarkState) {
 
         try {
           await apiMark({
-            selection: s.selection,
-            sentence: s.sentence,
-            sentence_id: s.sentenceId,
             lemma,
-            page_url: s.pageUrl,
             source: "grammar",
+            sentence: s.sentence,
           });
           saveWord(s, item.text, item.translation);
           await saveState({ ...s });

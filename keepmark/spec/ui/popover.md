@@ -26,20 +26,18 @@
 
 ```text
 ┌─ [选中词标题]          [学习] [☆] [×] ─┐
-│  [词性标签] 释义……                     │
-│  搭配（可选）                           │
-│  全库出现 N 次 · 缓存（可选）            │
+│  [词性] 释义……【N次】                   │
 └────────────────────────────────────────┘
 ```
 
 | 区块 | 内容来源 | 类名 / 元素约束 |
 |------|----------|-----------------|
 | 标题 | `selection`；超过 28 字符尾部截断加 `…` | `.word-title` |
-| 词性 + 释义 | `translate` 响应 `pos` / `meaning` | `.km-pos-tag` + `.km-meaning` |
-| 搭配 | `collocation`（可为空） | `.km-collocation` |
-| 出现次数 | `seen_count`；`from_cache` 为 `true` 时附加「 · 缓存」 | `.km-seen-count` |
+| 词性 + 释义 + 次数 | `pos` / `meaning`；`seen_count>0` 时在释义末尾追加 `【N次】` | `.km-pos-tag` + `.km-meaning` + `.km-seen-inline` |
 | 加载 | 两条骨架线 | `.km-skeleton` + `.km-skeleton-line` |
 | 错误 | `formatApiError(err)` 文案，红色 | `.km-error` |
+
+不展示「全库出现」「缓存」独立行；不在 Popover 展示搭配。
 
 ### 2.2 位置
 
@@ -113,8 +111,8 @@ requestKey = `${selection.trim()}::${sentence.slice(0, 80)}`
 
 - [ ] 拖选单词后，约 280ms 内出现 Popover（加载 → 成功/失败）。
 - [ ] Popover 标题不超过 28 字符，超长截断。
-- [ ] 释义区包含：词性标签、释义、可选搭配、出现次数。
-- [ ] `from_cache` 为 true 时，次数后附加「 · 缓存」。
+- [ ] 释义区包含：词性标签、释义；`seen_count>0` 时末尾为 `【N次】`。
+- [ ] 不展示「全库出现」「缓存」独立行，不展示搭配。
 - [ ] Popover 贴选区下方；空间不足时翻到上方；水平居中且不出视口。
 - [ ] 页面滚动时 Popover 跟随选区。
 - [ ] 点 × 或 Esc 关闭 Popover 并清除选区。

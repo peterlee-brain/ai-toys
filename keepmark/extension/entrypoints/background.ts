@@ -63,30 +63,74 @@ export default defineBackground(() => {
 
 async function handleApiProxy(message: ApiProxyRequest): Promise<ApiProxyResponse> {
   const start = performance.now();
+  const timeoutMs = message.path.includes("/grammar") ? 120_000 : 90_000;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   console.log(`[KeepMark background] fetching ${message.method} ${message.path}`);
-  const res = await fetch.bind(globalThis)(`${API_BASE}${message.path}`, {
-    method: message.method,
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: message.body !== undefined ? JSON.stringify(message.body) : undefined,
-  });
 
-  const raw = (await res.json().catch(() => ({}))) as Record<string, unknown>;
-  const elapsed = Math.round(performance.now() - start);
-  console.log(`[KeepMark background] fetch ${message.path} took ${elapsed}ms, status ${res.status}`);
+  try {
+    const res = await fetch.bind(globalThis)(`${API_BASE}${message.path}`, {
+      method: message.method,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: message.body !== undefined ? JSON.stringify(message.body) : undefined,
+      signal: controller.signal,
+    });
 
-  if (!res.ok) {
+    const contentType = res.headers.get("content-type") || "";
+    if (!contentType.includes("application/json")) {
+      return {
+        ok: false,
+        status: res.status,
+        error: statusToMessage(res.status),
+      };
+    }
+
+    const raw = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+    const elapsed = Math.round(performance.now() - start);
+    console.log(`[KeepMark background] fetch ${message.path} took ${elapsed}ms, status ${res.status}`);
+
+    if (!res.ok) {
+      return {
+        ok: false,
+        status: res.status,
+        error: parseApiError(raw, res.status) || statusToMessage(res.status),
+      };
+    }
+
+    return {
+      ok: true,
+      status: res.status,
+      data: raw,
+    };
+  } catch (err) {
+    const aborted =
+      (err instanceof DOMException && err.name === "AbortError") ||
+      (err instanceof Error && err.name === "AbortError");
     return {
       ok: false,
-      status: res.status,
-      error: parseApiError(raw, res.status),
+      status: 0,
+      error: aborted
+        ? `请求超时（>${Math.round(timeoutMs / 1000)}s），服务较忙请稍后重试`
+        : err instanceof Error
+          ? err.message
+          : "网络请求失败",
     };
+  } finally {
+    clearTimeout(timer);
   }
+}
 
-  return {
-    ok: true,
-    status: res.status,
-    data: raw,
-  };
+function statusToMessage(status: number): string {
+  if (status === 504 || status === 408) {
+    return "服务响应超时，请稍后重试";
+  }
+  if (status === 502 || status === 503) {
+    return "翻译服务暂时不可用，请稍后重试";
+  }
+  if (status >= 500) {
+    return "服务异常，请稍后重试";
+  }
+  return `请求失败（HTTP ${status}）`;
 }

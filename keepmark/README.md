@@ -24,11 +24,28 @@ Chrome 加载 `extension/dist/`。API 默认见 `extension/shared/api-base.ts`�
 ## 设计稿预览
 
 ```bash
-cd spec/design && python3 -m http.server 9876
-# 打开 http://localhost:9876/design.html
+# 方式 1：脚本启动（推荐）
+./scripts/start-design-server.sh
+
+# 方式 2：手动启动
+cd spec/design && python3 -m http.server 9877 --bind 0.0.0.0
 ```
 
-样式引用 `extension/assets/styles/ui.css`，与插件实现对齐。
+默认访问：
+- 本地：`http://localhost:9877/design.html`
+- 同局域网：`http://<本机IP>:9877/design.html`
+
+### 绑定域名 keepmark.0xpeterlee.xyz
+
+本地开发时，让域名指向本机：
+
+```bash
+sudo sh -c 'echo "127.0.0.1 keepmark.0xpeterlee.xyz" >> /etc/hosts'
+```
+
+然后访问：`http://keepmark.0xpeterlee.xyz:9877/design.html`
+
+如果是真实域名（已拥有 0xpeterlee.xyz），把 DNS A 记录指向服务器 IP，将 `spec/design/` 下的文件部署到 Web 服务器（nginx / cdn），并直接访问 `https://keepmark.0xpeterlee.xyz/design.html`。
 
 ## 文档
 

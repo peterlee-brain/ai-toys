@@ -1,4 +1,5 @@
-:root {
+:root,
+:host {
   --km-bg: #ffffff;
   --km-bg-muted: #f6f7f9;
   --km-bg-hover: #eef1f5;
@@ -20,6 +21,8 @@
   --km-radius-md: 10px;
   --km-radius-lg: 14px;
   --km-radius-full: 9999px;
+  color: #1a1d23;
+  -webkit-text-fill-color: #1a1d23;
 }
 
 * {
@@ -98,16 +101,31 @@
 }
 
 .km-popover {
-  width: 300px;
-  max-height: 240px;
-  background: #ffffff;
-  border: 1px solid var(--km-border);
-  border-radius: var(--km-radius-md);
-  box-shadow: var(--km-shadow), 0 0 0 1px rgba(255, 255, 255, 0.8);
+  width: 280px;
+  max-height: 160px;
+  color: #1a1d23;
+  -webkit-text-fill-color: #1a1d23;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(226, 230, 237, 0.9);
+  border-radius: 12px;
+  box-shadow:
+    0 12px 40px rgba(15, 23, 42, 0.16),
+    0 0 0 1px rgba(255, 255, 255, 0.45) inset;
   overflow: hidden;
-  animation: km-in 120ms ease-out forwards;
   isolation: isolate;
   opacity: 1;
+  backdrop-filter: blur(18px) saturate(165%);
+  -webkit-backdrop-filter: blur(18px) saturate(165%);
+  transform-origin: center top;
+  font-family: var(--km-font);
+}
+
+.km-popover.km-pop-anim {
+  animation: km-pop-morph 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.km-popover.km-pop-anim.km-pop-above {
+  animation-name: km-pop-morph-above;
 }
 
 .km-popover-header {
@@ -115,21 +133,30 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  min-height: 48px;
-  padding: 8px 10px 8px 12px;
-  border-bottom: 1px solid var(--km-border);
-  background: #ffffff;
+  min-height: 40px;
+  padding: 6px 8px 6px 10px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.55);
 }
 
 .km-popover-header .word-title {
-  font-size: 16px;
-  font-weight: 600;
-  margin: 0;
-  flex: 1;
+  display: block;
+  flex: 1 1 auto;
   min-width: 0;
+  margin: 0;
+  padding: 0;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: #0f172a !important;
+  -webkit-text-fill-color: #0f172a !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  background: transparent;
 }
 
 .km-popover-actions {
@@ -140,17 +167,20 @@
 }
 
 .km-popover-actions .km-btn {
-  height: 32px;
-  padding: 0 12px;
-  font-size: 13px;
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .km-popover-body {
-  padding: 10px 12px 12px;
+  padding: 8px 10px 10px;
   overflow-y: auto;
-  max-height: 180px;
-  min-height: 48px;
-  background: #ffffff;
+  max-height: 120px;
+  min-height: 0;
+  background: transparent;
 }
 
 .km-pos-tag {
@@ -158,15 +188,23 @@
   font-size: 11px;
   color: var(--km-primary);
   background: var(--km-primary-soft);
-  padding: 2px 6px;
+  padding: 1px 5px;
   border-radius: 4px;
   margin-right: 6px;
 }
 
 .km-meaning {
-  font-size: 14px;
-  line-height: 22px;
+  font-size: 13px;
+  line-height: 20px;
   margin: 0;
+}
+
+.km-seen-inline {
+  margin-left: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--km-text-tertiary);
+  white-space: nowrap;
 }
 
 .km-skeleton {
@@ -192,9 +230,10 @@
 
 .km-toast-wrap {
   position: fixed;
-  left: 50%;
+  right: 20px;
   bottom: 24px;
-  transform: translateX(-50%);
+  left: auto;
+  transform: none;
   z-index: 2147483646;
   pointer-events: none;
 }
@@ -202,18 +241,34 @@
 .km-toast {
   display: inline-flex;
   align-items: center;
-  height: 40px;
-  padding: 0 16px;
-  background: var(--km-text);
+  gap: 8px;
+  min-height: 40px;
+  max-width: min(360px, calc(100vw - 40px));
+  padding: 10px 14px;
+  background: #0f172a;
   color: #fff;
   font-size: 12px;
-  border-radius: var(--km-radius-full);
-  box-shadow: var(--km-shadow);
+  line-height: 1.4;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.28);
   animation: km-in 120ms ease-out;
+}
+
+.km-toast::before {
+  content: "KeepMark";
+  flex-shrink: 0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(37, 99, 235, 0.9);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .km-toast.warning {
   background: #422006;
+  border-color: rgba(252, 211, 77, 0.35);
 }
 
 @keyframes km-in {
@@ -224,6 +279,45 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* Glass + Morph：从选区「长成」毛玻璃浮层 */
+@keyframes km-pop-morph {
+  0% {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.38);
+    filter: blur(3px);
+    border-radius: 8px;
+  }
+  58% {
+    opacity: 1;
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    border-radius: 14px;
+  }
+}
+
+@keyframes km-pop-morph-above {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.38);
+    filter: blur(3px);
+    border-radius: 8px;
+  }
+  58% {
+    opacity: 1;
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    border-radius: 14px;
   }
 }
 
@@ -565,6 +659,29 @@
 .km-empty-hint {
   font-size: 12px;
   color: var(--km-text-tertiary);
+}
+
+.km-load-timer {
+  margin: 8px 0 0;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--km-text-secondary);
+}
+
+.km-load-timer span {
+  font-weight: 600;
+  color: var(--km-primary);
+}
+
+.km-load-sentence {
+  margin-top: 16px;
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--km-text-secondary);
+  background: var(--km-bg-muted);
+  border-radius: var(--km-radius-sm);
 }
 
 .km-toggle {

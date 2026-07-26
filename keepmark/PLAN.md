@@ -57,7 +57,8 @@
 - [ ] 类型约定落地：补全 `extension/shared/api-types.ts` 与 `api.ts`
 - [ ] 测试策略落地：为完整句子判定、Popover 定位、状态重置添加单元测试
 - [ ] 设计稿验证：在 `spec/design/design.html` 中跑通所有验收清单
-- [ ] 后端联调：配置 `VITE_API_BASE_URL`，验证 `translate` / `grammar` / `mark`
+- [x] 后端联调：配置 `VITE_API_BASE_URL` 为 `https://keepmark.0xpeterlee.xyz`
+- [ ] 后端联调：验证 `translate` / `grammar` / `mark` 接口连通性
 - [ ] 发布前 E2E：真实 Chrome 网页 + 侧栏走完整流程
 - [ ] 更新 `spec/changelog.md` v0.5 完成日期
 

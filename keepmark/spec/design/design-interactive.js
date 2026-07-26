@@ -181,9 +181,12 @@
   var mockToast = document.getElementById("mockToast");
   var mockToastText = document.getElementById("mockToastText");
   var grammarEmpty = document.getElementById("grammarEmpty");
+  var grammarLoading = document.getElementById("grammarLoading");
   var grammarContent = document.getElementById("grammarContent");
   var grammarQuote = document.getElementById("grammarQuote");
   var grammarLearning = document.getElementById("grammarLearning");
+  var grammarLoadTimer = document.getElementById("grammarLoadTimer");
+  var grammarLoadSentence = document.getElementById("grammarLoadSentence");
   var bankEmpty = document.getElementById("bankEmpty");
   var bankHeader = document.getElementById("bankHeader");
   var bankList = document.getElementById("bankList");
@@ -193,6 +196,8 @@
   var btnClosePanel = document.getElementById("btnClosePanel");
   var btnReopenPanel = document.getElementById("btnReopenPanel");
   var designMain = document.querySelector(".design-main");
+  var loadingTimer = null;
+  var loadingStartedAt = 0;
 
   function escapeHtml(text) {
     return String(text)
@@ -241,17 +246,22 @@
   }
 
   function extractSentence(text, articleEl) {
-    var full = articleEl.innerText.replace(/\s+/g, " ");
-    var idx = full.toLowerCase().indexOf(text.toLowerCase());
-    if (idx === -1) return text;
-    var start = idx;
-    var end = idx + text.length;
-    while (start > 0 && !/[.!?]/.test(full[start - 1])) start--;
-    if (start > 0 && /[.!?]/.test(full[start - 1])) start++;
-    while (start < full.length && full[start] === " ") start++;
-    while (end < full.length && !/[.!?]/.test(full[end])) end++;
-    if (end < full.length) end++;
-    return full.slice(start, end).trim();
+    var needle = text.trim().toLowerCase();
+    var blocks = articleEl.querySelectorAll("p");
+    for (var i = 0; i < blocks.length; i++) {
+      var full = blocks[i].innerText.replace(/\s+/g, " ").trim();
+      var idx = full.toLowerCase().indexOf(needle);
+      if (idx === -1) continue;
+      var start = idx;
+      var end = idx + needle.length;
+      while (start > 0 && !/[.!?]/.test(full[start - 1])) start--;
+      if (start > 0 && /[.!?]/.test(full[start - 1])) start++;
+      while (start < full.length && full[start] === " ") start++;
+      while (end < full.length && !/[.!?]/.test(full[end])) end++;
+      if (end < full.length) end++;
+      return full.slice(start, end).trim();
+    }
+    return text.trim();
   }
 
   function isFullSentenceSelection(selection, sentence) {
@@ -270,14 +280,52 @@
     return false;
   }
 
+  function stopGrammarLoadingTimer() {
+    if (loadingTimer) {
+      clearInterval(loadingTimer);
+      loadingTimer = null;
+    }
+  }
+
+  function startGrammarLoadingTimer() {
+    stopGrammarLoadingTimer();
+    loadingStartedAt = Date.now();
+    if (grammarLoadTimer) grammarLoadTimer.textContent = "0.0";
+    loadingTimer = setInterval(function () {
+      if (!grammarLoadTimer) return;
+      var sec = ((Date.now() - loadingStartedAt) / 1000).toFixed(1);
+      grammarLoadTimer.textContent = sec;
+    }, 100);
+  }
+
+  function showGrammarLoading(sentence) {
+    stopGrammarLoadingTimer();
+    if (grammarEmpty) grammarEmpty.classList.add("km-hidden");
+    if (grammarContent) grammarContent.classList.add("km-hidden");
+    if (grammarLoading) grammarLoading.classList.remove("km-hidden");
+    if (grammarLoadSentence) {
+      if (sentence) {
+        grammarLoadSentence.textContent = sentence;
+        grammarLoadSentence.classList.remove("km-hidden");
+      } else {
+        grammarLoadSentence.classList.add("km-hidden");
+      }
+    }
+    startGrammarLoadingTimer();
+  }
+
   function openSentenceLearning(text, sentence) {
     hidePopover();
     state.selection = text;
     state.sentence = sentence;
-    state.grammarReady = true;
+    state.grammarReady = false;
     reopenSidePanel();
-    renderGrammarPanel();
     switchSidePanel("grammar");
+    showGrammarLoading(sentence);
+    setTimeout(function () {
+      state.grammarReady = true;
+      renderGrammarPanel();
+    }, 1200);
   }
 
   function highlightSelectionInQuote(sentence, selection) {
@@ -367,18 +415,23 @@
 
     var gap = 8;
     var popWidth = 300;
-    var popHeight = mockPopoverLayer.offsetHeight || 120;
     var sceneRect = mockScene.getBoundingClientRect();
+    var pop = mockPopoverLayer.querySelector(".km-popover");
 
+    // 始终贴在选区下方
     var top = lastRect.bottom - sceneRect.top + gap;
-    if (lastRect.bottom + popHeight + gap > sceneRect.bottom) {
-      top = Math.max(gap, lastRect.top - sceneRect.top - gap - popHeight);
-    }
-
     var left =
       lastRect.left - sceneRect.left + lastRect.width / 2 - popWidth / 2;
     var maxLeft = mockScene.clientWidth - popWidth - 12;
     left = Math.max(12, Math.min(left, maxLeft));
+
+    if (pop) {
+      pop.style.transformOrigin = "center top";
+      pop.classList.remove("km-pop-above");
+      pop.classList.remove("km-pop-anim");
+      void pop.offsetWidth;
+      pop.classList.add("km-pop-anim");
+    }
 
     mockPopoverLayer.style.width = popWidth + "px";
     mockPopoverLayer.style.left = left + "px";
@@ -388,11 +441,19 @@
   function showPopoverLayer() {
     mockPopoverLayer.classList.remove("km-hidden");
     positionPopover();
+    var pop = mockPopoverLayer.querySelector(".km-popover");
+    if (pop) {
+      pop.classList.remove("km-pop-anim");
+      void pop.offsetWidth;
+      pop.classList.add("km-pop-anim");
+    }
   }
 
   function hidePopover() {
     state.popoverOpen = false;
     clearTimeout(translateTimer);
+    var pop = mockPopoverLayer.querySelector(".km-popover");
+    if (pop) pop.classList.remove("km-pop-anim");
     mockPopoverLayer.classList.add("km-hidden");
   }
 
@@ -452,6 +513,8 @@
 
   function renderGrammarPanel() {
     if (!state.grammarReady || !state.sentence) {
+      stopGrammarLoadingTimer();
+      if (grammarLoading) grammarLoading.classList.add("km-hidden");
       grammarEmpty.classList.remove("km-hidden");
       grammarContent.classList.add("km-hidden");
       return;
@@ -459,6 +522,8 @@
 
     var learning = getMockLearning(state.sentence, state.selection);
     state.vocabulary = learning.vocabulary || [];
+    stopGrammarLoadingTimer();
+    if (grammarLoading) grammarLoading.classList.add("km-hidden");
     grammarEmpty.classList.add("km-hidden");
     grammarContent.classList.remove("km-hidden");
     grammarQuote.innerHTML = highlightSelectionInQuote(
@@ -571,9 +636,14 @@
       showToast("请先选中英文单词或句子", "warning");
       return;
     }
-    state.grammarReady = true;
-    renderGrammarPanel();
+    reopenSidePanel();
     switchSidePanel("grammar");
+    showGrammarLoading(state.sentence);
+    state.grammarReady = false;
+    setTimeout(function () {
+      state.grammarReady = true;
+      renderGrammarPanel();
+    }, 1200);
   }
 
   function toggleSave() {
@@ -638,11 +708,7 @@
       }
 
       var sentence = extractSentence(text, mockArticle);
-      if (isFullSentenceSelection(text, sentence)) {
-        openSentenceLearning(text, sentence);
-        return;
-      }
-
+      // 选中只出 Popover；学习需主动点「学习」
       if (state.autoTranslate) fetchTranslate(false);
       else {
         state.selection = text;
@@ -798,6 +864,50 @@
     updateStats();
   }
 
+  function replayFxCard(card) {
+    if (!card) return;
+    card.classList.remove("is-playing");
+    // force reflow so animation restarts
+    void card.offsetWidth;
+    card.classList.add("is-playing");
+    card.classList.add("is-active");
+  }
+
+  function initFxGallery() {
+    var gallery = document.getElementById("fxGallery");
+    var btnReplayAll = document.getElementById("btnReplayAllFx");
+    if (!gallery) return;
+
+    gallery.querySelectorAll(".fx-card").forEach(function (card) {
+      card.addEventListener("click", function () {
+        gallery.querySelectorAll(".fx-card").forEach(function (c) {
+          c.classList.remove("is-active");
+        });
+        replayFxCard(card);
+      });
+    });
+
+    if (btnReplayAll) {
+      btnReplayAll.addEventListener("click", function () {
+        gallery.querySelectorAll(".fx-card").forEach(function (card, i) {
+          setTimeout(function () {
+            replayFxCard(card);
+          }, i * 80);
+        });
+      });
+    }
+
+    // 首次进入自动播一遍
+    setTimeout(function () {
+      gallery.querySelectorAll(".fx-card").forEach(function (card, i) {
+        setTimeout(function () {
+          replayFxCard(card);
+        }, i * 70);
+      });
+    }, 250);
+  }
+
   initNav();
   initInteractions();
+  initFxGallery();
 })();

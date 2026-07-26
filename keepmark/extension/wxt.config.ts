@@ -2,7 +2,7 @@ import { defineConfig } from "wxt";
 
 const apiBase =
   process.env.VITE_API_BASE_URL?.replace(/\/$/, "") ||
-  "http://43.165.167.70:8080";
+  "https://keepmark.0xpeterlee.xyz";
 
 export default defineConfig({
   srcDir: ".",

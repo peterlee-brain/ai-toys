@@ -50,7 +50,6 @@ async function apiRequest<T>(
 export function apiTranslate(body: {
   selection: string;
   sentence: string;
-  page_url?: string;
 }): Promise<TranslateResponse> {
   return apiRequest<TranslateResponse>(
     "/v1/translate",
@@ -63,9 +62,7 @@ export function apiTranslate(body: {
 }
 
 export function apiGrammar(body: {
-  selection?: string;
   sentence: string;
-  page_url?: string;
 }): Promise<GrammarResponse> {
   return apiRequest<GrammarResponse>(
     "/v1/grammar",
@@ -78,12 +75,9 @@ export function apiGrammar(body: {
 }
 
 export function apiMark(body: {
-  selection: string;
-  sentence: string;
-  sentence_id: string;
   lemma: string;
-  page_url: string;
   source: "translate" | "grammar";
+  sentence: string;
 }): Promise<MarkResponse> {
   return apiRequest<MarkResponse>(
     "/v1/words/mark",
@@ -116,6 +110,9 @@ export function getApiBaseUrl(): string {
 
 export function formatApiError(err: unknown): string {
   const msg = err instanceof Error ? err.message : String(err);
+  if (/HTTP\s*504|gateway time-?out|响应超时|请求超时/i.test(msg)) {
+    return "服务响应超时，请稍后重试";
+  }
   if (
     msg.includes("empty json") ||
     msg.includes("decode json") ||
@@ -126,6 +123,9 @@ export function formatApiError(err: unknown): string {
   }
   if (msg.includes("kimi learning") || msg.includes("grammar")) {
     return "学习服务暂时不可用，请稍后重试";
+  }
+  if (/HTTP\s*50[023]/i.test(msg)) {
+    return "翻译服务暂时不可用，请稍后重试";
   }
   return msg;
 }

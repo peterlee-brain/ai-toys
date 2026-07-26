@@ -11,12 +11,14 @@ function pick<T>(obj: Record<string, unknown>, ...keys: string[]): T | undefined
 }
 
 export function normalizeTranslate(raw: Record<string, unknown>): TranslateResponse {
+  const lemma = String(pick(raw, "lemma", "Lemma") ?? "");
+  const word = String(pick(raw, "word", "Word") ?? lemma);
   return {
-    lemma: String(pick(raw, "lemma", "Lemma") ?? ""),
-    word: String(pick(raw, "word", "Word") ?? ""),
+    lemma,
+    word,
     pos: String(pick(raw, "pos", "Pos") ?? ""),
     sentence_id: String(pick(raw, "sentence_id", "SentenceID") ?? ""),
-    meaning: String(pick(raw, "meaning", "Meaning") ?? ""),
+    meaning: String(pick(raw, "translation", "meaning", "Translation", "Meaning") ?? ""),
     collocation: pick<string>(raw, "collocation", "Collocation"),
     seen_count: Number(pick(raw, "seen_count", "SeenCount") ?? 0),
     from_cache: Boolean(pick(raw, "from_cache", "FromCache")),
@@ -77,5 +79,10 @@ export function normalizeMark(raw: Record<string, unknown>): MarkResponse {
 
 export function parseApiError(raw: Record<string, unknown>, status: number): string {
   const err = raw as { message?: string; Message?: string; reason?: string; Reason?: string };
-  return err.message || err.Message || err.reason || err.Reason || `HTTP ${status}`;
+  const msg = err.message || err.Message || err.reason || err.Reason;
+  if (msg) return msg;
+  if (status === 504 || status === 408) return "服务响应超时，请稍后重试";
+  if (status === 502 || status === 503) return "翻译服务暂时不可用，请稍后重试";
+  if (status >= 500) return "服务异常，请稍后重试";
+  return status ? `请求失败（HTTP ${status}）` : "网络请求失败";
 }

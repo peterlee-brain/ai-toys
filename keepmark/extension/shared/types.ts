@@ -22,6 +22,8 @@ export interface KeepMarkState {
   markedLemmas: string[];
   savedKeys: string[];
   sidePanelTab: "grammar" | "bank";
+  /** 仅点击「学习」发起请求期间为 true；选中文本不得置 true */
+  grammarLoading: boolean;
   grammarReady: boolean;
   /** Kimi 推荐的重点词汇，打开学习面板后填充 */
   vocabulary: VocabItem[];
@@ -46,7 +48,8 @@ export const DEFAULT_STATE: KeepMarkState = {
   markedLemmas: [],
   savedKeys: [],
   sidePanelTab: "grammar",
-  grammarReady: false,
+  grammarLoading: false,
+  grammarReady: true,
   vocabulary: [],
   learning: null,
   sentenceId: "",

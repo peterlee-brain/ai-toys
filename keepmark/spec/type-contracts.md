@@ -52,22 +52,16 @@ interface KeepMarkState {
 interface TranslateRequest {
   selection: string;
   sentence: string;
-  page_url: string;
 }
 
 interface GrammarRequest {
-  selection: string;
   sentence: string;
-  page_url: string;
 }
 
 interface MarkRequest {
-  selection: string;
-  sentence: string;
-  sentence_id: string;
   lemma: string;
-  page_url: string;
   source: "translate" | "grammar";
+  sentence: string;
 }
 ```
 

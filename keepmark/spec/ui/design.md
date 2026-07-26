@@ -56,10 +56,21 @@ spec/design/
 ## 5. 本地启动
 
 ```bash
-cd spec/design
-python3 -m http.server 9876
-# 打开 http://localhost:9876/design.html
+# 推荐脚本
+./scripts/start-design-server.sh
+
+# 手动
+python3 -m http.server 9877 --bind 0.0.0.0
+# 打开 http://localhost:9877/design.html
 ```
+
+绑定域名 `keepmark.0xpeterlee.xyz`：
+
+```bash
+sudo sh -c 'echo "127.0.0.1 keepmark.0xpeterlee.xyz" >> /etc/hosts'
+```
+
+然后访问：`http://keepmark.0xpeterlee.xyz:9877/design.html`。
 
 必须起本地服务，因为 `design-interactive.js` 用相对路径加载 `../../extension/assets/styles/ui.css`。
 

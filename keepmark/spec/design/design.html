@@ -16,6 +16,7 @@
           在文章中 <strong>拖选英文</strong> 体验完整流程
         </p>
         <a href="#scene" data-nav="scroll">阅读场景</a>
+        <a href="#popover-fx" data-nav="scroll">Popover 效果墙</a>
         <a href="#sidepanel-grammar" data-nav="sidepanel" data-tab="grammar">Side Panel · 学习</a>
         <a href="#sidepanel-bank" data-nav="sidepanel" data-tab="bank">Side Panel · 词库</a>
       </aside>
@@ -49,7 +50,7 @@
                 <div class="mock-popover-layer km-hidden" id="mockPopoverLayer">
                   <div class="km-popover">
                     <div class="km-popover-header">
-                      <p class="word-title" id="popoverWord">—</p>
+                      <div class="word-title" id="popoverWord">—</div>
                       <div class="km-popover-actions">
                         <button type="button" class="km-btn km-btn-outline" id="btnLearn">学习</button>
                         <button type="button" class="km-btn km-btn-outline km-btn-save-star" id="btnSave" title="留标">☆</button>
@@ -68,6 +69,169 @@
                   </div>
                 </div>
               </div>
+            </div>
+          </section>
+
+          <section id="popover-fx" class="design-section">
+            <div class="fx-gallery-head">
+              <div>
+                <h2 class="fx-gallery-title">Popover 效果墙</h2>
+                <p class="fx-gallery-desc">
+                  已选定 <strong>B · Glass</strong> + <strong>G · Morph</strong>，并接到上方阅读场景的真实 Popover。点卡片仍可对比其它方案。
+                </p>
+              </div>
+              <button type="button" class="design-chip" id="btnReplayAllFx">全部重播</button>
+            </div>
+
+            <div class="fx-gallery-grid" id="fxGallery">
+              <article class="fx-card" data-fx="current">
+                <header class="fx-card-meta">
+                  <h3>A · 当前样式</h3>
+                  <span>KeepMark 现状</span>
+                </header>
+                <p class="fx-card-src">白底卡片 · 轻阴影 · 120ms fade-in</p>
+                <div class="fx-stage muted-bg">
+                  <div class="fx-pop fx-pop--current">
+                    <div class="fx-pop-h"><strong>notwithstanding</strong><span>学习 · ☆</span></div>
+                    <div class="fx-pop-b">prep. 尽管；虽然（正式书面）</div>
+                  </div>
+                </div>
+              </article>
+
+              <article class="fx-card is-chosen" data-fx="glass">
+                <header class="fx-card-meta">
+                  <h3>B · Glass 毛玻璃</h3>
+                  <span class="fx-chosen-tag">已选定</span>
+                </header>
+                <p class="fx-card-src">半透明 + backdrop-blur · 常见于现代浮层</p>
+                <div class="fx-stage fx-stage--photo">
+                  <div class="fx-pop fx-pop--glass">
+                    <div class="fx-pop-h"><strong>notwithstanding</strong><span>学习 · ☆</span></div>
+                    <div class="fx-pop-b">prep. 尽管；虽然（正式书面）</div>
+                  </div>
+                </div>
+              </article>
+
+              <article class="fx-card" data-fx="scale">
+                <header class="fx-card-meta">
+                  <h3>C · Scale 弹性放大</h3>
+                  <span>Tippy.js · scale + inertia</span>
+                </header>
+                <p class="fx-card-src">从小放大 + 轻微回弹，工具提示最常用</p>
+                <div class="fx-stage muted-bg">
+                  <div class="fx-pop fx-pop--scale">
+                    <div class="fx-pop-h"><strong>notwithstanding</strong><span>学习 · ☆</span></div>
+                    <div class="fx-pop-b">prep. 尽管；虽然（正式书面）</div>
+                  </div>
+                </div>
+              </article>
+
+              <article class="fx-card" data-fx="shift">
+                <header class="fx-card-meta">
+                  <h3>D · Shift-away 位移</h3>
+                  <span>Tippy.js · shift-away</span>
+                </header>
+                <p class="fx-card-src">从锚点方向滑入并带箭头，阅读干扰小</p>
+                <div class="fx-stage muted-bg">
+                  <div class="fx-anchor-dot"></div>
+                  <div class="fx-pop fx-pop--shift">
+                    <div class="fx-pop-arrow"></div>
+                    <div class="fx-pop-h"><strong>notwithstanding</strong><span>学习 · ☆</span></div>
+                    <div class="fx-pop-b">prep. 尽管；虽然（正式书面）</div>
+                  </div>
+                </div>
+              </article>
+
+              <article class="fx-card" data-fx="perspective">
+                <header class="fx-card-meta">
+                  <h3>E · Perspective 透视</h3>
+                  <span>Tippy.js · perspective</span>
+                </header>
+                <p class="fx-card-src">3D 翻转展开，视觉冲击更强</p>
+                <div class="fx-stage muted-bg">
+                  <div class="fx-pop fx-pop--perspective">
+                    <div class="fx-pop-h"><strong>notwithstanding</strong><span>学习 · ☆</span></div>
+                    <div class="fx-pop-b">prep. 尽管；虽然（正式书面）</div>
+                  </div>
+                </div>
+              </article>
+
+              <article class="fx-card" data-fx="fill">
+                <header class="fx-card-meta">
+                  <h3>F · Material Fill</h3>
+                  <span>Tippy.js · animateFill</span>
+                </header>
+                <p class="fx-card-src">色块先铺开再显内容，像墨水扩散</p>
+                <div class="fx-stage muted-bg">
+                  <div class="fx-pop fx-pop--fill">
+                    <div class="fx-fill-backdrop"></div>
+                    <div class="fx-pop-inner">
+                      <div class="fx-pop-h"><strong>notwithstanding</strong><span>学习 · ☆</span></div>
+                      <div class="fx-pop-b">prep. 尽管；虽然（正式书面）</div>
+                    </div>
+                  </div>
+                </div>
+              </article>
+
+              <article class="fx-card is-chosen" data-fx="morph">
+                <header class="fx-card-meta">
+                  <h3>G · Morph 变形展开</h3>
+                  <span class="fx-chosen-tag">已选定</span>
+                </header>
+                <p class="fx-card-src">从选区高亮「长成」浮层，连贯感最强</p>
+                <div class="fx-stage muted-bg">
+                  <p class="fx-morph-line">…actions, <mark class="fx-morph-seed">notwithstanding</mark> prior…</p>
+                  <div class="fx-pop fx-pop--morph">
+                    <div class="fx-pop-h"><strong>notwithstanding</strong><span>学习 · ☆</span></div>
+                    <div class="fx-pop-b">prep. 尽管；虽然（正式书面）</div>
+                  </div>
+                </div>
+              </article>
+
+              <article class="fx-card" data-fx="aurora">
+                <header class="fx-card-meta">
+                  <h3>H · Aurora 渐变描边</h3>
+                  <span>现代 Floating Panel</span>
+                </header>
+                <p class="fx-card-src">旋转渐变边框 + 轻浮起，偏产品感</p>
+                <div class="fx-stage muted-bg">
+                  <div class="fx-pop fx-pop--aurora">
+                    <div class="fx-aurora-ring"></div>
+                    <div class="fx-pop-inner">
+                      <div class="fx-pop-h"><strong>notwithstanding</strong><span>学习 · ☆</span></div>
+                      <div class="fx-pop-b">prep. 尽管；虽然（正式书面）</div>
+                    </div>
+                  </div>
+                </div>
+              </article>
+
+              <article class="fx-card" data-fx="soft">
+                <header class="fx-card-meta">
+                  <h3>I · Soft Elevate</h3>
+                  <span>Floating UI 演示风</span>
+                </header>
+                <p class="fx-card-src">大圆角 + 多层柔和阴影 + 轻微上浮</p>
+                <div class="fx-stage muted-bg">
+                  <div class="fx-pop fx-pop--soft">
+                    <div class="fx-pop-h"><strong>notwithstanding</strong><span>学习 · ☆</span></div>
+                    <div class="fx-pop-b">prep. 尽管；虽然（正式书面）</div>
+                  </div>
+                </div>
+              </article>
+
+              <article class="fx-card" data-fx="ink">
+                <header class="fx-card-meta">
+                  <h3>J · Ink Dark</h3>
+                  <span>阅读场景深色浮层</span>
+                </header>
+                <p class="fx-card-src">深色卡片 + 高对比释义，夜间阅读更省眼</p>
+                <div class="fx-stage fx-stage--dark">
+                  <div class="fx-pop fx-pop--ink">
+                    <div class="fx-pop-h"><strong>notwithstanding</strong><span>学习 · ☆</span></div>
+                    <div class="fx-pop-b">prep. 尽管；虽然（正式书面）</div>
+                  </div>
+                </div>
+              </article>
             </div>
           </section>
         </main>
@@ -92,7 +256,14 @@
                   <div class="km-empty-icon">📖</div>
                   <p>选中文章中的英文后，点击 Popover「学习」查看语法讲解</p>
                 </div>
+                <div id="grammarLoading" class="km-empty km-hidden">
+                  <div class="km-empty-icon">⏳</div>
+                  <p>正在加载学习内容…</p>
+                  <p class="km-load-timer">已用时 <span id="grammarLoadTimer">0.0</span>s</p>
+                  <div class="km-load-sentence km-hidden" id="grammarLoadSentence"></div>
+                </div>
                 <div id="grammarContent" class="km-hidden">
+                  <div class="km-block-title">原文</div>
                   <div class="km-quote-card" id="grammarQuote"></div>
                   <div id="grammarLearning"></div>
                 </div>

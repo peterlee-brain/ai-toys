@@ -1,6 +1,6 @@
 # 面：Side Panel · 学习
 
-> 版本：v0.5  
+> 版本：v0.6  
 > Tab：`grammar`  
 > 代码：`sidepanel/main.ts` → `renderGrammar`；HTML：`shared/render-learning.ts`  
 > 真源：本文件；`spec/design/` 与之冲突时以本文件为准。
@@ -26,6 +26,7 @@
 
 | 区块 | 内容 | 对应字段 |
 |------|------|----------|
+| 原文 | 英文原句；选中词/短语 `<strong>` 高亮 | `sentence` + `selection` |
 | 翻译 | 整句中文 | `learning.translation` |
 | 语法结构 | 表格式：主句、主语、谓语、宾语/表语、从句、修饰成分 | `learning.grammar` |
 | 补充要点 | 列表；可无 | `learning.grammar.details[]` |
@@ -37,19 +38,21 @@
 | 状态 | 条件 | 展示文案 / 图标 |
 |------|------|-----------------|
 | 空 | 无选区或尚无 `learning` | `📖 在网页中选中英文后<br>点击 Popover「学习」或 <kbd>Alt+G</kbd>` |
-| 加载中 | 有 `selection` 且 `!grammarReady` | `⏳ 正在加载学习内容…` |
+| 加载中 | 有 `selection` 且 `!grammarReady` | `⏳ 正在加载学习内容…` + **已用时 X.Xs** + 英文原句预览 |
 | 就绪 | `grammarReady && learning` | 上述区块；可带入场动画（`.km-grammar-stream`、`.km-stream-line`） |
 | 错误 | API 失败 | 红色错误文案；保留空态入口 |
 
-### 2.3 引用区（对齐设计稿）
-
-设计稿顶部有 `grammarQuote`：
+### 2.3 结构约定
 
 ```text
-原文所在句（用户选中词/短语加粗）
+#grammarEmpty | #grammarLoading | #grammarContent
+  #grammarContent
+    .km-block-title 原文
+    #grammarQuote
+    #grammarLearning   ← 仅写入翻译及以下区块，勿整块覆盖 Content
 ```
 
-插件实现已补齐：在「翻译」上方展示引用区，用 `<strong>` 高亮 `selection`。
+插件实现须与设计稿一致：**原文在翻译上方**；加载态独立容器 + 计时器。
 
 ---
 
@@ -61,11 +64,13 @@
 
 | 来源 | 触发条件 | 落到 Tab | 副作用 |
 |------|----------|----------|--------|
-| 拖选完整句子 | `isFullSentenceSelection()` 为 true | `grammar` | `POST /v1/grammar`，重置 `grammarReady`/`learning`/`vocabulary` |
-| Popover 点 **学习** | 用户主动学习 | `grammar` | 先关 Popover，再发起 `grammar` |
+| 拖选完整句子 | 有英文选区 | 不自动进学习 | 仅 Popover 快译（若开启选中即翻译）；需点「学习」 |
+| Popover 点 **学习** | 用户主动学习 | `grammar` | 先关 Popover，再发起 `grammar`；`grammarLoading=true` |
 | 按 `Alt+G` | 有选区时 | `grammar` | 同上 |
 | 右键「语法讲解」 | 强制补句 | `grammar` | 同上 |
 | 壳上点 **学习** Tab | 仅切换 UI | 切换 `sidePanelTab` | 不发起新请求；展示已有 `learning` 或空态 |
+
+> **不变量**：仅用户主动「学习」才置 `grammarLoading`；单纯选中文本不得进入加载态。
 
 ### 3.2 状态变化对本面的影响
 
