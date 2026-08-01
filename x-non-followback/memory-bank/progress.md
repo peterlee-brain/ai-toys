@@ -13,13 +13,13 @@
 
 ## 验证证据
 
-- `node --test tests/*.test.js`：34 项通过，0 项失败；覆盖核心解析、面板、Manifest、异步启动、观察器重绑、结构保护、乱序写入与存储故障恢复。
+- `node --test tests/*.test.js`：40 项通过，0 项失败；覆盖核心解析、面板、Manifest、异步启动、观察器重绑、结构保护、乱序写入、存储故障恢复、按钮精确识别和高亮生命周期。
 - `node --check src/core.js`、`src/panel.js`、`src/content.js`：全部退出 0。
 - Manifest JSON 解析和 `git diff --check`：退出 0。
 - 禁止能力搜索：`fetch`、XHR、WebSocket、Beacon、tabs、cookies、程序化点击与滚动均无匹配。
 - Manifest 权限复核：仅 `storage` 与 `https://x.com/*`。
-- 本地 X 风格夹具视觉验收：5 个已扫描账号、2 个未回关账号，结果链接、暂停、二次点击清空均符合预期，浏览器控制台无错误。
+- 本地 X 风格夹具视觉验收：5 个已扫描账号、2 个未回关账号；只有 `one_way` 与 `another` 两个 Following 按钮呈橙红色高亮，三个互关按钮保持原样；两个高亮按钮尺寸一致（约 100×37px），面板仍显示“已扫描 5 / 未回关 2”。
 
 ## 尚待验收
 
-- 真实登录态 X 页面未完成可靠 DOM 验收：内置浏览器打开目标页面后快照超时，无法确认当时登录态和线上结构。用户在 Chrome 中加载扩展后，仍需按 [../PLAN.md](../PLAN.md) Task 4 Step 3 验证滚动采集、刷新恢复、路由离开停止扫描和实际回关标记。
+- 真实登录态 X 页面未完成可靠 DOM 验收：内置浏览器打开目标页面后快照超时，无法确认当时登录态和线上结构。用户在 Chrome 中重新加载 `0.2.0` 后，仍需按 [../PLAN.md](../PLAN.md) Task 4 Step 3 验证滚动采集、刷新恢复、路由离开停止扫描、实际回关标记和 Following 按钮高亮。
