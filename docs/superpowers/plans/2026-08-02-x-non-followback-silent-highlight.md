@@ -4,7 +4,7 @@
 
 **Goal:** 完全隐藏 X Following 页面右侧的扩展悬浮面板，同时保留静默扫描、本地缓存和未回关账号原生 Following 按钮高亮。
 
-**Architecture:** 现有 `content.js`、`panel.js` 和缓存状态机保持不变；只在 `styles.css` 中让面板根节点 `#x-non-followback-root.x-nfb` 使用 `display: none !important`。静态测试锁定“面板不可见、按钮高亮规则仍存在”，README 与 memory-bank 同步描述静默模式。
+**Architecture:** 现有 `content.js`、`panel.js` 和缓存状态机保持不变；只在 `styles.css` 中让面板根节点 `#x-non-followback-root.x-nfb` 使用 `display: none !important`。本地浏览器夹具用真实 `getComputedStyle` 验证“面板不可见、两枚按钮仍高亮”，README 与 memory-bank 同步描述静默模式。
 
 **Tech Stack:** Chrome Extension Manifest V3、原生 JavaScript、原生 CSS、Node.js `node:test`，无第三方依赖或构建步骤。
 
@@ -21,7 +21,8 @@
 
 ## File Map
 
-- `x-non-followback/tests/styles.test.js`：锁定面板根节点不可见，继续验证按钮高亮不改变交互区域。
+- `x-non-followback/tests/manual-fixture.html`：暴露基于真实计算样式的面板可见性和高亮数量验收数据。
+- `x-non-followback/tests/styles.test.js`：保持现有按钮高亮不改变交互区域的回归测试。
 - `x-non-followback/src/styles.css`：隐藏面板根节点，保留原生按钮高亮规则。
 - `x-non-followback/README.md`：改为静默扫描和 Chrome 重新加载说明。
 - `x-non-followback/memory-bank/architecture.md`：记录面板控制器保留但根节点不可见的职责边界。
@@ -32,7 +33,7 @@
 ### Task 1: 隐藏悬浮面板并保持按钮高亮
 
 **Files:**
-- Modify: `x-non-followback/tests/styles.test.js`
+- Modify: `x-non-followback/tests/manual-fixture.html`
 - Modify: `x-non-followback/src/styles.css`
 - Modify: `x-non-followback/README.md`
 - Modify: `x-non-followback/memory-bank/architecture.md`
@@ -40,32 +41,31 @@
 
 **Interfaces:**
 - Consumes: `panel.js` 已创建的 `<aside id="x-non-followback-root" class="x-nfb">` 根节点。
-- Produces: CSS 规则 `#x-non-followback-root.x-nfb { display: none !important; }`；`.x-nfb-following-highlight` 规则保持可见且不改变点击区域。
+- Produces: CSS 规则 `#x-non-followback-root.x-nfb { display: none !important; }`；夹具根元素的 `data-fixture-panel-display` 为 `none`、`data-fixture-highlight-count` 为 `2`。
 
-- [ ] **Step 1: 写面板不可见的失败测试**
+- [ ] **Step 1: 给本地夹具加入真实渲染探针**
 
-在 `tests/styles.test.js` 末尾加入：
+在 `tests/manual-fixture.html` 的现有高亮同步循环之后加入：
 
 ```js
-test('floating panel is hidden while silent button highlighting stays available', () => {
-  const css = fs.readFileSync(path.join(__dirname, '..', 'src', 'styles.css'), 'utf8');
-  const panelRule = css.match(/#x-non-followback-root\.x-nfb\s*\{([^}]+)\}/);
-  assert.ok(panelRule, 'panel root rule must exist');
-  assert.match(panelRule[1], /display:\s*none\s*!important/);
-  assert.match(css, /\.x-nfb-following-highlight\s*\{/);
-});
+    const fixturePanel = document.getElementById('x-non-followback-root');
+    document.documentElement.dataset.fixturePanelDisplay = getComputedStyle(fixturePanel).display;
+    document.documentElement.dataset.fixtureHighlightCount = String(
+      document.querySelectorAll('.x-nfb-following-highlight').length
+    );
 ```
 
-- [ ] **Step 2: 运行定向测试并确认因缺少隐藏规则而失败**
+- [ ] **Step 2: 在真实浏览器中确认红灯**
 
-Run:
+从 `x-non-followback` 启动本地服务器：
 
 ```bash
-cd x-non-followback
-node --test --test-name-pattern="floating panel is hidden" tests/styles.test.js
+python3 -m http.server 8766
 ```
 
-Expected: FAIL，`display: none !important` 断言不匹配；失败原因不是语法或文件读取错误。
+在浏览器打开 `http://127.0.0.1:8766/tests/manual-fixture.html`，读取根元素数据集。
+
+Expected: `fixturePanelDisplay` 为 `block` 而不是目标值 `none`，`fixtureHighlightCount` 为 `2`；这证明测试因面板当前可见而失败，同时按钮高亮基线正常。
 
 - [ ] **Step 3: 实现最小 CSS 隐藏规则**
 
@@ -79,16 +79,15 @@ Expected: FAIL，`display: none !important` 断言不匹配；失败原因不是
 
 不修改 `.x-nfb-following-highlight`、`content.js` 或 `panel.js`。
 
-- [ ] **Step 4: 运行定向测试并确认转绿**
+- [ ] **Step 4: 在真实浏览器中确认转绿并运行样式回归测试**
 
-Run:
+刷新本地夹具，再读取根元素数据集；随后运行：
 
 ```bash
-node --test --test-name-pattern="floating panel is hidden" tests/styles.test.js
 node --test tests/styles.test.js
 ```
 
-Expected: 定向测试 PASS；两个样式测试全部 PASS。
+Expected: `fixturePanelDisplay` 为 `none`，`fixtureHighlightCount` 仍为 `2`；样式回归测试 PASS。
 
 - [ ] **Step 5: 同步用户文档与架构记录**
 
@@ -131,12 +130,11 @@ git diff --check
 rg -n "fetch\s*\(|XMLHttpRequest|WebSocket|sendBeacon|chrome\.tabs|chrome\.cookies|\.click\s*\(|scroll(?:To|By|IntoView)?\s*\(" src manifest.json
 ```
 
-Expected: 41 项测试通过；三个语法检查、manifest 解析和 `git diff --check` 退出 0；禁止能力搜索无匹配并以状态 1 退出。
+Expected: 40 项测试通过；三个语法检查、manifest 解析和 `git diff --check` 退出 0；禁止能力搜索无匹配并以状态 1 退出。
 
 - [ ] **Step 7: 提交静默高亮实现**
 
 ```bash
-git add x-non-followback/tests/styles.test.js x-non-followback/src/styles.css x-non-followback/README.md x-non-followback/memory-bank/architecture.md x-non-followback/memory-bank/progress.md
+git add x-non-followback/tests/manual-fixture.html x-non-followback/src/styles.css x-non-followback/README.md x-non-followback/memory-bank/architecture.md x-non-followback/memory-bank/progress.md
 git commit -m "feat(x-non-followback): hide floating scan panel"
 ```
-

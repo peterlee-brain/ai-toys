@@ -34,16 +34,17 @@
 
 ## 实现边界
 
-实现代码只修改 `x-non-followback/src/styles.css` 及其静态样式测试；同时更新 README 和进度记录，删除“右上角面板可见”等过期说明：
+实现代码只修改 `x-non-followback/src/styles.css`；本地夹具增加真实计算样式探针，同时更新 README 和进度记录，删除“右上角面板可见”等过期说明：
 
 1. 为 `#x-non-followback-root` 设置 `display: none !important`，确保现有面板不会出现在页面任何一侧。
 2. 保留 `.x-nfb-following-highlight` 的现有按钮高亮样式。
 3. 不改动 `content.js`、`panel.js` 的扫描和状态机逻辑。
-4. README 改为静默扫描使用说明，并明确页面不再提供暂停或清空控件。
+4. 本地 X 风格夹具通过 `getComputedStyle` 暴露面板显示状态和高亮按钮数量，验证真实浏览器行为而不是只匹配 CSS 源码。
+5. README 改为静默扫描使用说明，并明确页面不再提供暂停或清空控件。
 
 ## 测试与验收
 
-- 先写失败测试，要求面板根节点具有不可见规则，同时要求按钮高亮规则仍存在。
+- 先给本地夹具加入真实渲染探针，确认改动前面板计算样式不是 `none`，且已有两枚按钮高亮。
 - 运行完整 Node 测试、JavaScript 语法检查、manifest 解析和禁止自动化/网络 API 的源码扫描。
 - 合并到 `main` 后再次运行完整验证。
 - 用户在 Chrome 扩展页重新加载 `/Users/xckj/peter-brain/ai-toys/x-non-followback`，刷新自己的 X Following 页面后：截图右侧的“未回关”面板完全消失，未回关账号的原生 Following 按钮仍明显高亮。
