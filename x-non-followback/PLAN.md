@@ -56,7 +56,7 @@
 - Produces: `XNonFollowbackCore.mergeAccount(state, account, now): ScanState`
 - Produces: `XNonFollowbackCore.sanitizeCache(value, expectedHandle): ScanState`
 
-- [ ] **Step 1: Write failing tests for routing, supported labels, parsing, deduplication, and cache isolation**
+- [x] **Step 1: Write failing tests for routing, supported labels, parsing, deduplication, and cache isolation**
 
 ```js
 const test = require('node:test');
@@ -87,13 +87,13 @@ test('parses an account and classifies absence of a marker as non-followback', (
 });
 ```
 
-- [ ] **Step 2: Run the tests and verify the missing module failure**
+- [x] **Step 2: Run the tests and verify the missing module failure**
 
 Run: `node --test tests/core.test.js`
 
 Expected: FAIL because `src/core.js` does not exist.
 
-- [ ] **Step 3: Implement the dependency-free core API**
+- [x] **Step 3: Implement the dependency-free core API**
 
 ```js
 (function exposeCore(global) {
@@ -105,8 +105,10 @@ Expected: FAIL because `src/core.js` does not exist.
   }
 
   function hasFollowBackMarker(text) {
-    const normalized = normalizeText(text);
-    return FOLLOWBACK_MARKERS.some((marker) => normalized.includes(marker));
+    return String(text ?? '')
+      .split('\n')
+      .map(normalizeText)
+      .some((line) => FOLLOWBACK_MARKERS.includes(line));
   }
 
   const api = {
@@ -126,13 +128,13 @@ Expected: FAIL because `src/core.js` does not exist.
 
 Implement profile-link filtering so navigation/status/settings paths cannot become handles. `sanitizeCache` must return an empty state when the schema version or owner handle differs. `mergeAccount` must preserve one record per lowercase handle and update `updatedAt`.
 
-- [ ] **Step 4: Run the core tests**
+- [x] **Step 4: Run the core tests**
 
 Run: `node --test tests/core.test.js`
 
 Expected: all tests PASS.
 
-- [ ] **Step 5: Run the syntax check and commit**
+- [x] **Step 5: Run the syntax check and commit**
 
 Run: `node --check src/core.js`
 
@@ -156,7 +158,7 @@ Commit: `feat(x-non-followback): add relationship scan core`
 - Produces: `PanelController.destroy(): void`
 - Produces: runtime functions `reconcileRoute()`, `scanVisibleCells()`, `schedulePersist()`, and `stopRuntime()` inside `content.js`.
 
-- [ ] **Step 1: Extend pure tests for panel sorting and status summaries**
+- [x] **Step 1: Extend pure tests for panel sorting and status summaries**
 
 ```js
 test('sorts non-followbacks newest-first without mutating input', () => {
@@ -170,13 +172,13 @@ test('sorts non-followbacks newest-first without mutating input', () => {
 });
 ```
 
-- [ ] **Step 2: Run the test and verify the new API failure**
+- [x] **Step 2: Run the test and verify the new API failure**
 
 Run: `node --test tests/core.test.js`
 
 Expected: FAIL because `listNonFollowbacks` is not defined.
 
-- [ ] **Step 3: Implement the panel model helper and make the test pass**
+- [x] **Step 3: Implement the panel model helper and make the test pass**
 
 Add `listNonFollowbacks(accounts)` to `src/core.js`; filter `followsBack === false`, copy the array, and sort descending by `seenAt`.
 
@@ -184,7 +186,7 @@ Run: `node --test tests/core.test.js`
 
 Expected: all tests PASS.
 
-- [ ] **Step 4: Implement the panel controller**
+- [x] **Step 4: Implement the panel controller**
 
 `mount(actions)` must create one root node with id `x-non-followback-root`, use DOM methods and `textContent` rather than interpolating profile data into HTML, and wire only these explicit actions:
 
@@ -198,7 +200,7 @@ const actions = {
 
 The rendered panel must show `已扫描 N`、`未回关 M`, a partial-result notice, pause/continue, clear, collapse/expand, timestamp, warnings, and profile links using `target="_blank"` plus `rel="noreferrer"`. It must not render an unfollow button.
 
-- [ ] **Step 5: Implement own-page guarded DOM scanning**
+- [x] **Step 5: Implement own-page guarded DOM scanning**
 
 Use `a[data-testid="AppTabBar_Profile_Link"]` to discover the logged-in handle and compare it case-insensitively with `getFollowingHandle(location.href)`. Observe `main` with `MutationObserver`, select `[data-testid="UserCell"]`, and convert each cell into this snapshot before calling the core parser:
 
@@ -210,13 +212,13 @@ Use `a[data-testid="AppTabBar_Profile_Link"]` to discover the logged-in handle a
 }
 ```
 
-Use a `WeakSet` to avoid parsing the same DOM node twice, debounce writes to `chrome.storage.local`, and stop/disconnect observers whenever the SPA route leaves the owner's Following page. Detect route changes without patching X functions by observing `document.documentElement` and comparing `location.href` on scheduled reconciliation.
+Use a `WeakMap` of DOM node to content signature so X can reuse virtual-list nodes and hydrate relationship text later. Debounce writes to `chrome.storage.local`, and stop/disconnect observers whenever the SPA route leaves the owner's Following page. Detect route changes without patching X functions by observing `document.documentElement` and comparing `location.href` on scheduled reconciliation.
 
-- [ ] **Step 6: Add resilient warnings and the local manual fixture**
+- [x] **Step 6: Add resilient warnings and the local manual fixture**
 
-After five visible user cells with zero parseable handles, pause writes and render `页面结构可能已变化，已停止记录新结果`. The fixture must contain one English mutual card, one simplified-Chinese mutual card, one traditional-Chinese mutual card, and two non-followback cards using `data-testid="UserCell"`.
+After three consecutive scan rounds each contain at least five user cells and zero parseable handles, pause writes and render `页面结构可能已变化，已停止记录新结果`. Finish each batch and schedule any valid pending result before pausing. The fixture must contain one English mutual card, one simplified-Chinese mutual card, one traditional-Chinese mutual card, and two non-followback cards using `data-testid="UserCell"`.
 
-- [ ] **Step 7: Run automated and static checks, then commit**
+- [x] **Step 7: Run automated and static checks, then commit**
 
 Run:
 
@@ -250,7 +252,7 @@ Commit: `feat(x-non-followback): add read-only scan panel`
 - Consumes: content-script order `src/core.js`, `src/panel.js`, `src/content.js` and stylesheet `src/styles.css`.
 - Produces: a directly loadable extension directory and project-local maintenance instructions.
 
-- [ ] **Step 1: Create the minimal Manifest V3 definition**
+- [x] **Step 1: Create the minimal Manifest V3 definition**
 
 ```json
 {
@@ -269,13 +271,13 @@ Commit: `feat(x-non-followback): add read-only scan panel`
 }
 ```
 
-- [ ] **Step 2: Add project documentation and repository registration**
+- [x] **Step 2: Add project documentation and repository registration**
 
 Document exact Chrome installation steps (`chrome://extensions` → Developer mode → Load unpacked → choose `ai-toys/x-non-followback`), the supported X routes/languages, manual-scroll limitation, cache-clear behavior, minimal permissions, and troubleshooting for X DOM changes. Add an `x-non-followback` row to the root project table.
 
 The memory bank must make `memory-bank/design.md` the product contract, this `PLAN.md` the task checklist, and the verification commands below the quality gate.
 
-- [ ] **Step 3: Validate manifest and repository content**
+- [x] **Step 3: Validate manifest and repository content**
 
 Run:
 
@@ -287,7 +289,7 @@ git diff --check
 
 Expected: manifest parse succeeds; the forbidden-capability search returns no matches; `git diff --check` succeeds.
 
-- [ ] **Step 4: Commit project packaging and documentation**
+- [x] **Step 4: Commit project packaging and documentation**
 
 Commit: `docs(x-non-followback): add install and maintenance guide`
 
@@ -304,7 +306,7 @@ Commit: `docs(x-non-followback): add install and maintenance guide`
 - Consumes: complete extension directory from Tasks 1–3.
 - Produces: verified release candidate with recorded evidence.
 
-- [ ] **Step 1: Run the complete automated gate**
+- [x] **Step 1: Run the complete automated gate**
 
 Run:
 
@@ -319,7 +321,7 @@ git diff --check
 
 Expected: tests PASS, syntax checks and manifest parsing exit 0, and no whitespace errors.
 
-- [ ] **Step 2: Inspect permission and forbidden-behavior boundaries**
+- [x] **Step 2: Inspect permission and forbidden-behavior boundaries**
 
 Run:
 
@@ -334,10 +336,10 @@ Expected: the first command has no matches; the second shows only `storage` and 
 
 Load the unpacked extension, open the logged-in user's own Following page, and verify: panel mount, count increases while the user scrolls, mutual accounts stay out of results, non-followbacks appear once, pause/resume works, refresh restores cache, clear removes only the current owner's cache, navigating away stops scanning, and no network request or account action is initiated by the extension.
 
-- [ ] **Step 4: Record evidence and close the plan**
+- [x] **Step 4: Record evidence and close the plan**
 
 Update `memory-bank/progress.md` with command outputs and any manual-test limitation. Mark completed checkboxes in `memory-bank/implementation-plan.md` and this file only for steps actually verified.
 
-- [ ] **Step 5: Commit verification closeout**
+- [x] **Step 5: Commit verification closeout**
 
 Commit: `chore(x-non-followback): record verification results`

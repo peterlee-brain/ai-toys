@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "X 未回关置顶",
+  "version": "0.1.0",
+  "description": "只读收集已加载的 X Following 卡片，并集中显示未回关账号。",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://x.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://x.com/*"
+      ],
+      "js": [
+        "src/core.js",
+        "src/panel.js",
+        "src/content.js"
+      ],
+      "css": [
+        "src/styles.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

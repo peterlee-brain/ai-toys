@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>X 未回关面板手工夹具</title>
+  <link rel="stylesheet" href="../src/styles.css">
+  <style>
+    body { margin: 0; color: #0f1419; background: #f7f9f9; font: 15px/1.4 system-ui, sans-serif; }
+    main { width: min(600px, 100%); min-height: 100vh; margin: 0 auto; background: white; border-inline: 1px solid #cfd9de; }
+    h1 { padding: 18px; margin: 0; border-bottom: 1px solid #cfd9de; }
+    [data-testid="UserCell"] { padding: 16px 18px; border-bottom: 1px solid #eff3f4; white-space: pre-line; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Following 页面夹具</h1>
+    <div data-testid="UserCell">Ada Lovelace
+@ada
+Follows you
+Following</div>
+    <div data-testid="UserCell">Grace Hopper
+@grace
+关注了你
+正在关注</div>
+    <div data-testid="UserCell">Lin
+@lin
+跟隨你
+正在跟隨</div>
+    <div data-testid="UserCell">One Way
+@one_way
+Following</div>
+    <div data-testid="UserCell">Another
+@another
+Following</div>
+  </main>
+  <script src="../src/core.js"></script>
+  <script src="../src/panel.js"></script>
+  <script>
+    const state = {
+      updatedAt: Date.now(),
+      accounts: {
+        ada: { displayName: 'Ada Lovelace', handle: 'ada', profileUrl: 'https://x.com/ada', followsBack: true, seenAt: 1 },
+        grace: { displayName: 'Grace Hopper', handle: 'grace', profileUrl: 'https://x.com/grace', followsBack: true, seenAt: 2 },
+        lin: { displayName: 'Lin', handle: 'lin', profileUrl: 'https://x.com/lin', followsBack: true, seenAt: 3 },
+        one_way: { displayName: 'One Way', handle: 'one_way', profileUrl: 'https://x.com/one_way', followsBack: false, seenAt: 4 },
+        another: { displayName: 'Another', handle: 'another', profileUrl: 'https://x.com/another', followsBack: false, seenAt: 5 }
+      }
+    };
+    const controller = XNonFollowbackPanel.mount({
+      onToggleEnabled(enabled) {
+        controller.render({ ownerHandle: 'fixture_owner', enabled, status: enabled ? '正在扫描' : '扫描已暂停', warning: '', state });
+      },
+      onClearCurrentOwner() {
+        state.accounts = {};
+        state.updatedAt = 0;
+        controller.render({ ownerHandle: 'fixture_owner', enabled: false, status: '已清空', warning: '', state });
+      }
+    });
+    controller.render({ ownerHandle: 'fixture_owner', enabled: true, status: '正在扫描，请继续向下滚动', warning: '', state });
+  </script>
+</body>
+</html>
