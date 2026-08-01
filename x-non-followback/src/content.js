@@ -6,6 +6,14 @@
   const SCAN_DELAY_MS = 120;
   const INVALID_CELL_LIMIT = 5;
   const INVALID_ROUND_LIMIT = 3;
+  const FOLLOWING_HIGHLIGHT_CLASS = 'x-nfb-following-highlight';
+  const FOLLOWING_CONTROL_LABELS = new Set([
+    'following',
+    '正在关注',
+    '已关注',
+    '正在跟隨',
+    '跟隨中'
+  ]);
 
   function snapshotFromCell(cell) {
     return {
@@ -21,6 +29,28 @@
     const loggedInHandle = coreApi?.getHandleFromProfileHref(profileHref);
     if (!pageHandle || !loggedInHandle || pageHandle !== loggedInHandle) return null;
     return { ownerHandle: pageHandle };
+  }
+
+  function clearFollowingHighlights(root) {
+    const highlighted = root?.querySelectorAll?.(`.${FOLLOWING_HIGHLIGHT_CLASS}`) || [];
+    for (const control of highlighted) control.classList?.remove(FOLLOWING_HIGHLIGHT_CLASS);
+  }
+
+  function findFollowingControl(cell, coreApi) {
+    const controls = cell?.querySelectorAll?.('button,[role="button"]') || [];
+    for (const control of controls) {
+      const text = coreApi?.normalizeText(control?.innerText ?? control?.textContent ?? '');
+      if (FOLLOWING_CONTROL_LABELS.has(text)) return control;
+    }
+    return null;
+  }
+
+  function syncFollowingHighlight(cell, account, coreApi) {
+    clearFollowingHighlights(cell);
+    if (!account || account.followsBack !== false) return null;
+    const control = findFollowingControl(cell, coreApi);
+    control?.classList?.add(FOLLOWING_HIGHLIGHT_CLASS);
+    return control || null;
   }
 
   function createStartGate() {
@@ -509,6 +539,9 @@
   const publicApi = {
     snapshotFromCell,
     resolveOwnFollowingContext,
+    findFollowingControl,
+    clearFollowingHighlights,
+    syncFollowingHighlight,
     createStartGate,
     nextStructureHealth,
     createStorageAdapter,

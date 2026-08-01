@@ -5,6 +5,33 @@ const assert = require('node:assert/strict');
 const core = require('../src/core.js');
 const content = require('../src/content.js');
 
+function createClassList() {
+  const values = new Set();
+  return {
+    add(value) { values.add(value); },
+    remove(value) { values.delete(value); },
+    contains(value) { return values.has(value); }
+  };
+}
+
+function createFollowingCell(controlTexts) {
+  const controls = controlTexts.map((innerText) => ({
+    innerText,
+    textContent: innerText,
+    classList: createClassList()
+  }));
+  return {
+    controls,
+    querySelectorAll(selector) {
+      if (selector === 'button,[role="button"]') return controls;
+      if (selector === '.x-nfb-following-highlight') {
+        return controls.filter((control) => control.classList.contains('x-nfb-following-highlight'));
+      }
+      return [];
+    }
+  };
+}
+
 class FakeMutationObserver {
   static instances = [];
 
@@ -153,6 +180,38 @@ test('resolves context only when route and logged-in profile match', () => {
     '/owner',
     core
   ), null);
+});
+
+test('finds exact English and Chinese following controls only', () => {
+  for (const label of ['Following', '正在关注', '已关注', '正在跟隨', '跟隨中']) {
+    const cell = createFollowingCell(['More', label]);
+    assert.equal(content.findFollowingControl(cell, core), cell.controls[1]);
+  }
+
+  for (const label of ['Follow', '关注', '跟随', 'Following account details', '']) {
+    assert.equal(content.findFollowingControl(createFollowingCell([label]), core), null);
+  }
+});
+
+test('highlights only non-followback controls', () => {
+  const cell = createFollowingCell(['Following']);
+  const control = cell.controls[0];
+
+  assert.equal(content.syncFollowingHighlight(cell, { followsBack: false }, core), control);
+  assert.equal(control.classList.contains('x-nfb-following-highlight'), true);
+
+  content.syncFollowingHighlight(cell, { followsBack: true }, core);
+  assert.equal(control.classList.contains('x-nfb-following-highlight'), false);
+});
+
+test('removes stale highlight when a virtual card becomes invalid', () => {
+  const cell = createFollowingCell(['Following']);
+  const control = cell.controls[0];
+
+  content.syncFollowingHighlight(cell, { followsBack: false }, core);
+  content.syncFollowingHighlight(cell, null, core);
+
+  assert.equal(control.classList.contains('x-nfb-following-highlight'), false);
 });
 
 test('suppresses repeated starts for an owner until the pending read completes', async () => {
