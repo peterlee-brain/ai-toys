@@ -7,6 +7,8 @@
 | [tech-stack.md](./tech-stack.md) | 平台、依赖与兼容范围 |
 | [implementation-plan.md](./implementation-plan.md) | 当前里程碑状态 |
 | [progress.md](./progress.md) | 已完成内容和验证证据 |
-| [../PLAN.md](../PLAN.md) | 本轮逐步实施清单 |
+| [../../docs/superpowers/specs/2026-08-02-x-non-followback-silent-highlight-design.md](../../docs/superpowers/specs/2026-08-02-x-non-followback-silent-highlight-design.md) | 当前静默高亮规格 |
+| [../../docs/superpowers/plans/2026-08-02-x-non-followback-silent-highlight.md](../../docs/superpowers/plans/2026-08-02-x-non-followback-silent-highlight.md) | 当前逐步实施清单 |
+| [../PLAN.md](../PLAN.md) | 已被取代的 `0.1.0` 可见面板实施记录 |
 
-发生冲突时，安全边界以 `design.md` 为准；任务状态以 `PLAN.md` 和 `progress.md` 为准。
+发生冲突时，产品与安全边界以 `design.md` 为准；任务状态以当前 superpowers plan 和 `progress.md` 为准。

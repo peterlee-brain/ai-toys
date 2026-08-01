@@ -1,4 +1,11 @@
-# X Non-Followback Chrome Extension Implementation Plan
+# Historical X Non-Followback Panel Implementation Plan (Superseded)
+
+> **Status:** This is the completed `0.1.0` panel implementation history. Its visible-panel, pause, clear, and panel-based acceptance requirements were superseded on 2026-08-02. Do not use them as the current product contract.
+>
+> Current requirements: [`../docs/superpowers/specs/2026-08-02-x-non-followback-silent-highlight-design.md`](../docs/superpowers/specs/2026-08-02-x-non-followback-silent-highlight-design.md).
+> Current implementation plan: [`../docs/superpowers/plans/2026-08-02-x-non-followback-silent-highlight.md`](../docs/superpowers/plans/2026-08-02-x-non-followback-silent-highlight.md).
+
+The historical plan below is preserved only as an implementation record.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 

@@ -1,12 +1,12 @@
-# AGENTS.md — X 未回关置顶
+# AGENTS.md — X 未回关按钮高亮
 
 本目录是一个无构建步骤的 Manifest V3 Chrome 扩展。
 
 ## 启动检查
 
-1. 读 [PLAN.md](./PLAN.md) 确认当前任务与进度。
-2. 读 [memory-bank/README.md](./memory-bank/README.md) 找到对应真源。
-3. 产品与安全边界以 [memory-bank/design.md](./memory-bank/design.md) 为准。
+1. 读 [memory-bank/README.md](./memory-bank/README.md) 找到当前规格、计划与进度真源。
+2. 产品与安全边界以 [memory-bank/design.md](./memory-bank/design.md) 为准。
+3. 根目录 [PLAN.md](./PLAN.md) 仅保留 `0.1.0` 可见面板的历史实施记录，不代表当前验收要求。
 
 ## 工程约束
 
