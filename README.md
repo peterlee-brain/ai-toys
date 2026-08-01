@@ -9,6 +9,7 @@
 |------|------|------|
 | [keepmark](./keepmark/) | **线上**英文阅读 Chrome 插件 + 后端 API | [keepmark/README.md](./keepmark/README.md) |
 | [true-social](./true-social/) | 社媒运营 + K 线采集 | [true-social/docs/](./true-social/docs/) |
+| [x-non-followback](./x-non-followback/) | 只读扫描 X Following 页面并集中显示未回关账号 | [x-non-followback/README.md](./x-non-followback/README.md) |
 
 以后新项目也放这里；文档结构可参考 keepmark 的 `memory-bank/`。
 
