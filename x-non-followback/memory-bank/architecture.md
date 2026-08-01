@@ -5,7 +5,7 @@
 - `src/core.js`：纯逻辑。识别 Following 路由、个人资料链接和中英文回关标记；解析卡片快照；校验、合并和筛选缓存状态。
 - `src/panel.js`：只负责固定面板的 DOM 与交互，不读取 X 页面、不访问存储。
 - `src/content.js`：验证“自己的 Following 页面”，读取 X 已加载的用户卡片，协调本地存储、扫描生命周期、面板和原生按钮高亮。
-- `src/styles.css`：所有选择器均限定在 `#x-non-followback-root` 下，避免污染 X 页面。
+- `src/styles.css`：面板规则限定在 `#x-non-followback-root` 下；页面装饰只使用专用 `.x-nfb-following-highlight` 类作用于已识别的原生控件，避免宽泛修改 X 页面。
 
 ## 数据流
 
