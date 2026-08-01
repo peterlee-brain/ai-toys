@@ -199,6 +199,20 @@
     };
   }
 
+  function listNonFollowbacks(accounts) {
+    const values = Array.isArray(accounts)
+      ? accounts
+      : Object.values(accounts && typeof accounts === 'object' ? accounts : {});
+
+    return values
+      .filter((account) => account && account.followsBack === false)
+      .slice()
+      .sort((left, right) => {
+        const timeDifference = Number(right.seenAt || 0) - Number(left.seenAt || 0);
+        return timeDifference || String(left.handle).localeCompare(String(right.handle));
+      });
+  }
+
   const api = {
     CACHE_VERSION,
     normalizeText,
@@ -207,7 +221,8 @@
     hasFollowBackMarker,
     parseUserSnapshot,
     mergeAccount,
-    sanitizeCache
+    sanitizeCache,
+    listNonFollowbacks
   };
 
   global.XNonFollowbackCore = api;

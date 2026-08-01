@@ -138,3 +138,25 @@ test('sanitizes cached account fields and rebuilds profile URLs', () => {
     seenAt: 42
   });
 });
+
+test('lists only non-followbacks newest-first without mutating input', () => {
+  const accounts = [
+    { handle: 'old', followsBack: false, seenAt: 1 },
+    { handle: 'mutual', followsBack: true, seenAt: 3 },
+    { handle: 'new', followsBack: false, seenAt: 2 }
+  ];
+
+  const result = core.listNonFollowbacks(accounts);
+
+  assert.deepEqual(result.map((item) => item.handle), ['new', 'old']);
+  assert.deepEqual(accounts.map((item) => item.handle), ['old', 'mutual', 'new']);
+});
+
+test('accepts a cached account record when listing non-followbacks', () => {
+  const result = core.listNonFollowbacks({
+    mutual: { handle: 'mutual', followsBack: true, seenAt: 3 },
+    one_way: { handle: 'one_way', followsBack: false, seenAt: 4 }
+  });
+
+  assert.deepEqual(result.map((item) => item.handle), ['one_way']);
+});
