@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>X 未回关面板手工夹具</title>
-  <link rel="stylesheet" href="../src/styles.css">
+  <link rel="stylesheet" href="../src/styles.css?v=silent-20260802">
   <style>
     body { margin: 0; color: #0f1419; background: #f7f9f9; font: 15px/1.4 system-ui, sans-serif; }
     main { width: min(600px, 100%); min-height: 100vh; margin: 0 auto; background: white; border-inline: 1px solid #cfd9de; }
@@ -73,6 +73,11 @@
       const account = XNonFollowbackCore.parseUserSnapshot(snapshot);
       XNonFollowbackContent.syncFollowingHighlight(cell, account, XNonFollowbackCore);
     }
+    const fixturePanel = document.getElementById('x-non-followback-root');
+    document.documentElement.dataset.fixturePanelDisplay = getComputedStyle(fixturePanel).display;
+    document.documentElement.dataset.fixtureHighlightCount = String(
+      document.querySelectorAll('.x-nfb-following-highlight').length
+    );
   </script>
 </body>
 </html>

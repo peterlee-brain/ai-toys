@@ -20,6 +20,7 @@
 }
 
 #x-non-followback-root.x-nfb {
+  display: none !important;
   --x-nfb-bg: rgba(255, 255, 255, 0.96);
   --x-nfb-border: rgb(207, 217, 222);
   --x-nfb-text: rgb(15, 20, 25);
