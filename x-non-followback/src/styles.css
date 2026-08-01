@@ -1,3 +1,24 @@
+.x-nfb-following-highlight {
+  color: rgb(180, 69, 0) !important;
+  background-color: rgba(255, 122, 0, 0.14) !important;
+  border-color: rgb(255, 122, 0) !important;
+  outline: 3px solid rgba(255, 122, 0, 0.9) !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 4px rgba(255, 122, 0, 0.18), 0 0 18px rgba(255, 122, 0, 0.38) !important;
+}
+
+.x-nfb-following-highlight:focus-visible {
+  outline-color: rgb(29, 155, 240) !important;
+  box-shadow: 0 0 0 5px rgba(29, 155, 240, 0.28), 0 0 18px rgba(255, 122, 0, 0.38) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  .x-nfb-following-highlight {
+    color: rgb(255, 183, 107) !important;
+    background-color: rgba(255, 122, 0, 0.2) !important;
+  }
+}
+
 #x-non-followback-root.x-nfb {
   --x-nfb-bg: rgba(255, 255, 255, 0.96);
   --x-nfb-border: rgb(207, 217, 222);
