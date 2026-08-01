@@ -33,6 +33,11 @@ test('recognizes supported English and Chinese followback labels', () => {
   assert.equal(core.hasFollowBackMarker('Following'), false);
 });
 
+test('does not treat marker words inside a display name or bio as followback', () => {
+  assert.equal(core.hasFollowBackMarker('Follows You Studio\n@studio\nFollowing'), false);
+  assert.equal(core.hasFollowBackMarker('Ada\n@ada\n介绍：关注了你才会收到提醒\n正在关注'), false);
+});
+
 test('parses an account and classifies missing marker as non-followback', () => {
   assert.deepEqual(core.parseUserSnapshot({
     text: 'Ada Lovelace\n@Ada_Dev\nFollowing',

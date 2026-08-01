@@ -72,8 +72,12 @@
   }
 
   function hasFollowBackMarker(text) {
-    const normalized = normalizeText(text);
-    return FOLLOWBACK_MARKERS.some((marker) => normalized.includes(marker));
+    const lines = String(text ?? '')
+      .replace(/\r/g, '')
+      .split('\n')
+      .map(normalizeText)
+      .filter(Boolean);
+    return lines.some((line) => FOLLOWBACK_MARKERS.includes(line));
   }
 
   function sanitizeAvatarUrl(value) {
