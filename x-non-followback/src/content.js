@@ -155,9 +155,7 @@
         clearTimeoutFn(current.persistTimer);
         current.persistTimer = null;
       }
-      if (current.dirty && current.storageReady && !current.clearing) {
-        void storageAdapter.write(current.storageKey, current.state).catch(() => {});
-      }
+      if (current.dirty && current.storageReady && !current.clearing) void persistNow(current);
       current.panel.destroy();
     }
 
@@ -182,16 +180,33 @@
       render(current);
     }
 
-    async function persistNow(current) {
-      if (!current || current.clearing || !current.storageReady) return false;
-      try {
-        await storageAdapter.write(current.storageKey, current.state);
-        if (current === runtime) current.dirty = false;
-        return true;
-      } catch {
-        markStorageFailure(current, 'write');
-        return false;
-      }
+    function persistNow(current) {
+      if (!current || current.clearing || !current.storageReady) return Promise.resolve(false);
+      if (current.writeInFlight) return current.writeInFlight;
+
+      current.writeInFlight = (async () => {
+        try {
+          while (
+            !current.clearing
+            && current.storageReady
+            && current.persistedRevision < current.revision
+          ) {
+            const targetRevision = current.revision;
+            const stateSnapshot = current.state;
+            await storageAdapter.write(current.storageKey, stateSnapshot);
+            current.persistedRevision = targetRevision;
+            current.dirty = current.persistedRevision < current.revision;
+          }
+          return true;
+        } catch {
+          current.dirty = current.persistedRevision < current.revision;
+          markStorageFailure(current, 'write');
+          return false;
+        } finally {
+          current.writeInFlight = null;
+        }
+      })();
+      return current.writeInFlight;
     }
 
     function schedulePersist(current) {
@@ -232,6 +247,7 @@
         if (current.processedSignatures.get(cell) === signature) continue;
         current.processedSignatures.set(cell, signature);
         current.state = core.mergeAccount(current.state, account, nowFn());
+        current.revision += 1;
         changed = true;
       }
 
@@ -292,16 +308,21 @@
           const cached = await storageAdapter.read(current.storageKey);
           if (current !== runtime) return;
           current.state = core.sanitizeCache(cached, current.ownerHandle);
+          current.revision = 0;
+          current.persistedRevision = 0;
           current.dirty = false;
         } else if (mode === 'remove') {
           await storageAdapter.remove(current.storageKey);
           if (current !== runtime) return;
           current.state = core.sanitizeCache(null, current.ownerHandle);
           current.processedSignatures = new WeakMap();
+          current.revision = 0;
+          current.persistedRevision = 0;
           current.dirty = false;
         } else {
           await storageAdapter.write(current.storageKey, current.state);
           if (current !== runtime) return;
+          current.persistedRevision = current.revision;
           current.dirty = false;
         }
       } catch {
@@ -348,6 +369,9 @@
       if (current.persistTimer) clearTimeoutFn(current.persistTimer);
       current.persistTimer = null;
 
+      if (current.writeInFlight) await current.writeInFlight;
+      if (current !== runtime) return;
+
       try {
         await storageAdapter.remove(current.storageKey);
       } catch {
@@ -364,6 +388,8 @@
       current.storageFailureMode = '';
       current.warning = '';
       current.dirty = false;
+      current.revision = 0;
+      current.persistedRevision = 0;
       current.clearing = false;
       render(current);
     }
@@ -380,6 +406,9 @@
         warning: restoreError ? storageFailureMessage('read') : '',
         clearing: false,
         dirty: false,
+        revision: 0,
+        persistedRevision: 0,
+        writeInFlight: null,
         storageReady: !restoreError,
         storageFailureMode: restoreError ? 'read' : '',
         structureHealth: { failureRounds: 0, shouldPause: false },

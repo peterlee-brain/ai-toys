@@ -37,6 +37,12 @@ function createTimerHarness() {
     clearTimeoutFn(id) {
       timers.delete(id);
     },
+    async runNextBatch() {
+      const pending = [...timers.entries()];
+      timers.clear();
+      for (const [, callback] of pending) callback();
+      await Promise.resolve();
+    },
     async runAll() {
       while (timers.size > 0) {
         const pending = [...timers.entries()];
@@ -374,4 +380,124 @@ test('runtime treats a missing main as loading and connects when it appears', as
   assert.equal(FakeMutationObserver.instances.length, 1);
   assert.equal(FakeMutationObserver.instances[0].target.id, 'main-late');
   assert.equal(harness.renders.at(-1).warning, '');
+});
+
+test('runtime flushes the newest revision after an older write completes during route exit', async () => {
+  let releaseFirstWrite;
+  const firstWrite = new Promise((resolve) => { releaseFirstWrite = resolve; });
+  const writes = [];
+  let persistedState = null;
+  const harness = createRuntimeHarness({
+    storageAdapter: {
+      read: async () => null,
+      write: async (_key, state) => {
+        writes.push(state);
+        if (writes.length === 1) await firstWrite;
+        persistedState = state;
+      },
+      remove: async () => {}
+    }
+  });
+  const cell = {
+    innerText: 'Ada\n@ada\nFollowing',
+    querySelectorAll: () => [{ getAttribute: () => '/ada' }],
+    querySelector: () => null
+  };
+  harness.document.cells = [cell];
+
+  await harness.controller.reconcileRoute();
+  await harness.timers.runNextBatch();
+  await harness.timers.runNextBatch();
+  assert.equal(writes.length, 1);
+
+  cell.innerText = 'Bob\n@bob\nFollowing';
+  cell.querySelectorAll = () => [{ getAttribute: () => '/bob' }];
+  FakeMutationObserver.instances[0].callback();
+  await harness.timers.runNextBatch();
+
+  harness.location.href = 'https://x.com/home';
+  await harness.controller.reconcileRoute();
+  releaseFirstWrite();
+  await Promise.resolve();
+  await Promise.resolve();
+  await Promise.resolve();
+
+  assert.equal(writes.length, 2);
+  assert.equal(persistedState.accounts.ada.handle, 'ada');
+  assert.equal(persistedState.accounts.bob.handle, 'bob');
+});
+
+test('runtime retries a failed write before resuming observation', async () => {
+  let writeCalls = 0;
+  const harness = createRuntimeHarness({
+    storageAdapter: {
+      read: async () => null,
+      async write() {
+        writeCalls += 1;
+        if (writeCalls === 1) throw new Error('write failed');
+      },
+      remove: async () => {}
+    }
+  });
+  harness.document.cells = [{
+    innerText: 'Ada\n@ada\nFollowing',
+    querySelectorAll: () => [{ getAttribute: () => '/ada' }],
+    querySelector: () => null
+  }];
+
+  await harness.controller.reconcileRoute();
+  await harness.timers.runAll();
+  await Promise.resolve();
+  assert.match(harness.renders.at(-1).warning, /无法保存本地结果/);
+
+  harness.panelActions.onToggleEnabled(true);
+  await Promise.resolve();
+  await Promise.resolve();
+
+  assert.equal(writeCalls, 2);
+  assert.equal(harness.renders.at(-1).warning, '');
+  assert.equal(harness.renders.at(-1).enabled, true);
+});
+
+test('runtime preserves results when clear fails and retries removal on continue', async () => {
+  let removeCalls = 0;
+  const harness = createRuntimeHarness({
+    storageAdapter: {
+      read: async () => ({
+        version: 1,
+        ownerHandle: 'owner',
+        accounts: {
+          ada: {
+            displayName: 'Ada',
+            handle: 'ada',
+            avatarUrl: '',
+            profileUrl: 'https://x.com/ada',
+            followsBack: false,
+            seenAt: 1
+          }
+        },
+        updatedAt: 1
+      }),
+      write: async () => {},
+      async remove() {
+        removeCalls += 1;
+        if (removeCalls === 1) throw new Error('remove failed');
+      }
+    }
+  });
+
+  await harness.controller.reconcileRoute();
+  harness.panelActions.onClearCurrentOwner();
+  await Promise.resolve();
+  await Promise.resolve();
+  assert.equal(harness.renders.at(-1).state.accounts.ada.handle, 'ada');
+  assert.match(harness.renders.at(-1).warning, /无法清空本地结果/);
+
+  harness.panelActions.onToggleEnabled(true);
+  await Promise.resolve();
+  await Promise.resolve();
+
+  assert.equal(removeCalls, 2);
+  assert.deepEqual(harness.renders.at(-1).state.accounts, {});
+  assert.equal(harness.renders.at(-1).enabled, true);
 });

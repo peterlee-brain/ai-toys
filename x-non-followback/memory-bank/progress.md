@@ -8,10 +8,11 @@
 - 使用内容签名而非单纯节点标记，兼容 X 虚拟列表复用 DOM 节点以及关系标记晚到。
 - 回关标记改为独立整行匹配，避免昵称或简介包含相同词语时误判。
 - 加固异步启动去重、`<main>` 替换重绑、三轮结构异常保护，以及本地存储读写/删除失败后的暂停与重试；缓存读取失败不会写入空状态覆盖旧数据。
+- 缓存写入按 revision 串行执行；旧写入延迟完成时会继续补写最新快照，避免离开页面时旧结果覆盖新结果。
 
 ## 验证证据
 
-- `node --test tests/*.test.js`：31 项通过，0 项失败；覆盖核心解析、面板、Manifest、异步启动、观察器重绑、结构保护与存储故障恢复。
+- `node --test tests/*.test.js`：34 项通过，0 项失败；覆盖核心解析、面板、Manifest、异步启动、观察器重绑、结构保护、乱序写入与存储故障恢复。
 - `node --check src/core.js`、`src/panel.js`、`src/content.js`：全部退出 0。
 - Manifest JSON 解析和 `git diff --check`：退出 0。
 - 禁止能力搜索：`fetch`、XHR、WebSocket、Beacon、tabs、cookies、程序化点击与滚动均无匹配。
