@@ -32,6 +32,20 @@ function createFollowingCell(controlTexts) {
   };
 }
 
+function createRuntimeCell({ name, handle, followsYou = false, controlText = 'Following' }) {
+  const base = createFollowingCell([controlText]);
+  return {
+    ...base,
+    innerText: `${name}\n@${handle}\n${followsYou ? 'Follows you\n' : ''}${controlText}`,
+    profileHref: `/${handle}`,
+    querySelectorAll(selector) {
+      if (selector === 'a[href]') return [{ getAttribute: () => this.profileHref }];
+      return base.querySelectorAll(selector);
+    },
+    querySelector() { return null; }
+  };
+}
+
 class FakeMutationObserver {
   static instances = [];
 
@@ -96,8 +110,11 @@ function createRuntimeHarness(overrides = {}) {
       return null;
     },
     querySelectorAll(selector) {
-      assert.equal(selector, 'main [data-testid="UserCell"]');
-      return this.cells;
+      if (selector === 'main [data-testid="UserCell"]') return this.cells;
+      if (selector === '.x-nfb-following-highlight') {
+        return this.cells.flatMap((cell) => cell.querySelectorAll?.(selector) || []);
+      }
+      throw new Error(`unexpected selector: ${selector}`);
     }
   };
   const renders = [];
@@ -314,6 +331,44 @@ test('runtime rebinds its list observer when X replaces main', async () => {
   assert.equal(firstObserver.disconnected, true);
   assert.equal(FakeMutationObserver.instances.length, 2);
   assert.equal(FakeMutationObserver.instances[1].target.id, 'main-2');
+});
+
+test('runtime highlights non-followbacks and clears reused mutual cells', async () => {
+  const harness = createRuntimeHarness();
+  const cell = createRuntimeCell({ name: 'Ada', handle: 'ada' });
+  harness.document.cells = [cell];
+
+  await harness.controller.reconcileRoute();
+  await harness.timers.runNextBatch();
+  assert.equal(cell.controls[0].classList.contains('x-nfb-following-highlight'), true);
+
+  cell.innerText = 'Grace\n@grace\nFollows you\nFollowing';
+  cell.profileHref = '/grace';
+  FakeMutationObserver.instances[0].callback();
+  await harness.timers.runNextBatch();
+
+  assert.equal(cell.controls[0].classList.contains('x-nfb-following-highlight'), false);
+});
+
+test('runtime clears highlights on pause and route departure', async () => {
+  const harness = createRuntimeHarness();
+  const cell = createRuntimeCell({ name: 'Ada', handle: 'ada' });
+  harness.document.cells = [cell];
+
+  await harness.controller.reconcileRoute();
+  await harness.timers.runNextBatch();
+  assert.equal(cell.controls[0].classList.contains('x-nfb-following-highlight'), true);
+
+  harness.panelActions.onToggleEnabled(false);
+  assert.equal(cell.controls[0].classList.contains('x-nfb-following-highlight'), false);
+
+  harness.panelActions.onToggleEnabled(true);
+  await harness.timers.runNextBatch();
+  assert.equal(cell.controls[0].classList.contains('x-nfb-following-highlight'), true);
+
+  harness.location.href = 'https://x.com/home';
+  await harness.controller.reconcileRoute();
+  assert.equal(cell.controls[0].classList.contains('x-nfb-following-highlight'), false);
 });
 
 test('runtime surfaces restore failure and does not observe or overwrite', async () => {

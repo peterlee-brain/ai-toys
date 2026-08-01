@@ -174,6 +174,7 @@
       }
       if (current?.scanTimer) clearTimeoutFn(current.scanTimer);
       if (current) current.scanTimer = null;
+      clearFollowingHighlights(document);
     }
 
     function stopRuntime() {
@@ -268,6 +269,7 @@
         const snapshot = snapshotFromCell(cell);
         const signature = `${snapshot.text}\n${snapshot.links.join('|')}`;
         const account = core.parseUserSnapshot(snapshot);
+        syncFollowingHighlight(cell, account, core);
         if (!account) {
           invalidCount += 1;
           continue;
