@@ -1,0 +1,362 @@
+:root {
+  color-scheme: dark;
+  --bg: #0b0f14;
+  --panel: #121821;
+  --line: #1e2a3a;
+  --text: #e8eef7;
+  --muted: #8b9bb4;
+  --accent: #3dd6c6;
+  --danger: #ff6b7a;
+  font-family: 'IBM Plex Sans', 'Segoe UI', sans-serif;
+  line-height: 1.4;
+  font-weight: 400;
+  color: var(--text);
+  background: radial-gradient(1200px 600px at 10% -10%, #163247 0%, transparent 55%),
+    radial-gradient(900px 500px at 100% 0%, #1a2438 0%, transparent 50%), var(--bg);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  min-width: 320px;
+}
+
+button,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+.app {
+  min-height: 100vh;
+  padding: 16px 18px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.top {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+.brand h1 {
+  margin: 0;
+  font-size: 1.35rem;
+  letter-spacing: 0.04em;
+}
+
+.brand p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: end;
+}
+
+.controls label {
+  display: grid;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.controls select,
+.controls button {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  background: #0d141e;
+  border-radius: 0;
+}
+
+.controls button {
+  cursor: pointer;
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  color: var(--accent);
+}
+
+.controls button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.error {
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--danger) 50%, var(--line));
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  font-size: 0.85rem;
+}
+
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  align-items: stretch;
+  min-height: 0;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  height: 560px;
+  min-height: 560px;
+  max-height: 560px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.panel-head {
+  flex: 0 0 108px;
+  height: 108px;
+  max-height: 108px;
+  overflow: hidden;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.panel-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.panel-head h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.panel-head p {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.bar-count {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.market-box {
+  margin-top: 4px;
+  padding: 4px 6px;
+  border: 1px solid var(--line);
+  background: #0d141e;
+  font-size: 0.62rem;
+  line-height: 1.25;
+  color: var(--muted);
+  height: 58px;
+  max-height: 58px;
+  overflow: hidden;
+}
+
+.market-box.tone-open {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+}
+
+.market-box.tone-closed {
+  border-color: color-mix(in srgb, var(--danger) 40%, var(--line));
+}
+
+.market-pill {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  margin-bottom: 2px;
+  color: var(--text);
+}
+
+.market-pill strong {
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+}
+
+.market-box ul {
+  margin: 0;
+  padding-left: 12px;
+}
+
+.market-box li {
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+
+.quote-err {
+  margin: 4px 0 0;
+  color: var(--danger);
+}
+
+.quote-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: end;
+  margin: 8px 0 6px;
+}
+
+.quote-controls label {
+  display: grid;
+  gap: 3px;
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.quote-controls input,
+.quote-controls select,
+.quote-controls button,
+.quote-presets button {
+  min-height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  background: #0b1018;
+  color: var(--text);
+  border-radius: 0;
+  font: inherit;
+}
+
+.quote-controls input {
+  width: 110px;
+}
+
+.quote-controls button {
+  cursor: pointer;
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+}
+
+.quote-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.quote-presets button {
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.quote-presets button.active {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+}
+
+.quote-panel {
+  padding: 12px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.quote-sell-hint {
+  font-size: 0.72rem;
+  color: var(--muted);
+  align-self: center;
+}
+
+.quote-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.quote-card {
+  padding: 8px;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, #0b1018 88%, var(--accent) 4%);
+  min-height: 108px;
+}
+
+.quote-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+  font-size: 0.75rem;
+}
+
+.quote-card-head span {
+  color: var(--muted);
+}
+
+.quote-card ul {
+  margin: 0;
+  padding-left: 1.1em;
+}
+
+.quote-card p {
+  margin: 4px 0 0;
+  color: var(--muted);
+}
+
+.chart {
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  height: 100%;
+}
+
+@media (min-width: 960px) {
+  .top {
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+  }
+
+  .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .panel {
+    height: min(62vh, 640px);
+    min-height: 480px;
+    max-height: min(62vh, 640px);
+  }
+
+  .quote-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}

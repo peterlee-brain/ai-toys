@@ -10,6 +10,7 @@
 | [web_value](./web_value/) | 股票财报、股本、分红与 K 线展示页面 | [web_value/](./web_value/) |
 | [true-social](./true-social/) | 社媒运营 + K 线采集 | [true-social/docs/](./true-social/docs/) |
 | [x-non-followback](./x-non-followback/) | 只读扫描 X Following，点亮未回关按钮，并在 Following 按钮左侧逐个标记序号 | [x-non-followback/README.md](./x-non-followback/README.md) |
+| [web_ondo](./web_ondo/) | Ondo 双源 K 线对照（BN / OKX + klinecharts） | [web_ondo/README.md](./web_ondo/README.md) |
 
 KeepMark（Chrome 插件 + 学习站）已迁至 [`../keepmark/`](../keepmark/)。
 
