@@ -7,6 +7,8 @@
   const INVALID_CELL_LIMIT = 5;
   const INVALID_ROUND_LIMIT = 3;
   const FOLLOWING_HIGHLIGHT_CLASS = 'x-nfb-following-highlight';
+  const MILESTONE_CLASS = 'x-nfb-milestone';
+  const MILESTONE_HOST_CLASS = 'x-nfb-milestone-host';
   const FOLLOWING_CONTROL_LABELS = new Set([
     'following',
     '正在关注',
@@ -36,10 +38,45 @@
     for (const control of highlighted) control.classList?.remove(FOLLOWING_HIGHLIGHT_CLASS);
   }
 
+  function clearMilestoneMarkers(root) {
+    const hosts = root?.querySelectorAll?.(`.${MILESTONE_HOST_CLASS}`) || [];
+    for (const host of hosts) {
+      host.classList?.remove(MILESTONE_HOST_CLASS);
+      const nested = host.querySelectorAll?.(`.${MILESTONE_CLASS}`) || [];
+      for (const marker of nested) marker.remove?.();
+    }
+
+    const orphans = root?.querySelectorAll?.(`.${MILESTONE_CLASS}`) || [];
+    for (const marker of orphans) marker.remove?.();
+  }
+
+  function clearPageDecorations(root) {
+    clearFollowingHighlights(root);
+    clearMilestoneMarkers(root);
+  }
+
+  function followingControlText(control, coreApi) {
+    if (!control) return '';
+    if (typeof control.childNodes?.length === 'number') {
+      const parts = [];
+      for (const node of control.childNodes) {
+        if (node?.nodeType === 3) {
+          parts.push(String(node.textContent || ''));
+          continue;
+        }
+        if (isMilestoneNode(node)) continue;
+        parts.push(String(node?.textContent || ''));
+      }
+      const joined = parts.join(' ').trim();
+      if (joined) return coreApi?.normalizeText(joined) || '';
+    }
+    return coreApi?.normalizeText(control.innerText ?? control.textContent ?? '') || '';
+  }
+
   function findFollowingControl(cell, coreApi) {
     const controls = cell?.querySelectorAll?.('button,[role="button"]') || [];
     for (const control of controls) {
-      const text = coreApi?.normalizeText(control?.innerText ?? control?.textContent ?? '');
+      const text = followingControlText(control, coreApi);
       if (FOLLOWING_CONTROL_LABELS.has(text)) return control;
     }
     return null;
@@ -51,6 +88,95 @@
     const control = findFollowingControl(cell, coreApi);
     control?.classList?.add(FOLLOWING_HIGHLIGHT_CLASS);
     return control || null;
+  }
+
+  function isMilestoneNode(node) {
+    return node?.className === MILESTONE_CLASS
+      || Boolean(node?.classList?.contains?.(MILESTONE_CLASS));
+  }
+
+  function ensureSessionIndex(current, account) {
+    if (!current?.sessionIndex || !account || account.followsBack !== false) return null;
+    // Dedupe by handle so the same account keeps one stable number.
+    const handle = account.handle;
+    if (!handle) return null;
+    if (!current.sessionIndex.has(handle)) {
+      current.sessionIndex.set(handle, current.sessionIndex.size + 1);
+    }
+    return current.sessionIndex.get(handle);
+  }
+
+  function readMilestoneMarker(root) {
+    const nodes = root?.querySelectorAll?.(`.${MILESTONE_CLASS}`) || [];
+    for (const node of nodes) {
+      if (isMilestoneNode(node)) return node;
+    }
+    return null;
+  }
+
+  function syncMilestoneMarker(cell, index, control) {
+    if (!cell) return null;
+
+    const milestoneIndex = Number(index);
+    const shouldShow = Number.isFinite(milestoneIndex)
+      && milestoneIndex >= 1
+      && Boolean(control)
+      && typeof control.classList?.add === 'function';
+    const label = shouldShow ? String(milestoneIndex) : '';
+
+    if (shouldShow) {
+      const existingOnControl = readMilestoneMarker(control);
+      if (existingOnControl && existingOnControl.textContent === label) {
+        control.classList.add(MILESTONE_HOST_CLASS);
+        const markers = cell.querySelectorAll?.(`.${MILESTONE_CLASS}`) || [];
+        for (const marker of markers) {
+          if (isMilestoneNode(marker) && marker !== existingOnControl) marker.remove?.();
+        }
+        const hosts = cell.querySelectorAll?.(`.${MILESTONE_HOST_CLASS}`) || [];
+        for (const host of hosts) {
+          if (host !== control) host.classList?.remove(MILESTONE_HOST_CLASS);
+        }
+        // Already correct — do not recreate while the list scrolls.
+        return existingOnControl;
+      }
+    }
+
+    const markers = cell.querySelectorAll?.(`.${MILESTONE_CLASS}`) || [];
+    for (const marker of markers) {
+      if (isMilestoneNode(marker)) marker.remove?.();
+    }
+
+    const hosts = cell.querySelectorAll?.(`.${MILESTONE_HOST_CLASS}`) || [];
+    for (const host of hosts) host.classList?.remove(MILESTONE_HOST_CLASS);
+
+    if (!shouldShow) return null;
+
+    const doc = cell.ownerDocument || control.ownerDocument;
+    if (!doc?.createElement) return null;
+
+    control.classList.add(MILESTONE_HOST_CLASS);
+    const marker = doc.createElement('span');
+    marker.className = MILESTONE_CLASS;
+    marker.textContent = label;
+    marker.setAttribute('aria-hidden', 'true');
+    if (typeof control.insertBefore === 'function') {
+      control.insertBefore(marker, control.firstChild || null);
+    } else {
+      control.appendChild?.(marker);
+    }
+    return marker;
+  }
+
+  function nextDiscoveryStamp(current, now) {
+    if (!Number.isFinite(current.nextDiscoveryStamp) || current.nextDiscoveryStamp <= 0) {
+      const maxSeen = Object.values(current.state?.accounts || {}).reduce(
+        (max, account) => Math.max(max, Number(account?.seenAt) || 0),
+        0
+      );
+      current.nextDiscoveryStamp = Math.max(Number(now) || 0, maxSeen);
+    }
+    current.nextDiscoveryStamp += 1;
+    return current.nextDiscoveryStamp;
   }
 
   function createStartGate() {
@@ -174,7 +300,7 @@
       }
       if (current?.scanTimer) clearTimeoutFn(current.scanTimer);
       if (current) current.scanTimer = null;
-      clearFollowingHighlights(document);
+      clearPageDecorations(document);
     }
 
     function stopRuntime() {
@@ -264,12 +390,13 @@
       let changed = false;
       let parsedCount = 0;
       let invalidCount = 0;
+      const parsedCells = [];
 
       for (const cell of cells) {
         const snapshot = snapshotFromCell(cell);
         const signature = `${snapshot.text}\n${snapshot.links.join('|')}`;
         const account = core.parseUserSnapshot(snapshot);
-        syncFollowingHighlight(cell, account, core);
+        parsedCells.push({ cell, account });
         if (!account) {
           invalidCount += 1;
           continue;
@@ -278,9 +405,28 @@
         parsedCount += 1;
         if (current.processedSignatures.get(cell) === signature) continue;
         current.processedSignatures.set(cell, signature);
-        current.state = core.mergeAccount(current.state, account, nowFn());
+        const stamp = current.state.accounts[account.handle]
+          ? nowFn()
+          : nextDiscoveryStamp(current, nowFn());
+        current.state = core.mergeAccount(current.state, account, stamp);
         current.revision += 1;
         changed = true;
+      }
+
+      // Number only confirmed Following non-followbacks (skip Follow / suggested cards).
+      // Assign top-to-bottom in DOM order; same handle keeps one stable number.
+      for (const { cell, account } of parsedCells) {
+        if (!account || account.followsBack !== false) continue;
+        if (!findFollowingControl(cell, core)) continue;
+        ensureSessionIndex(current, account);
+      }
+
+      for (const { cell, account } of parsedCells) {
+        const control = syncFollowingHighlight(cell, account, core);
+        const milestoneIndex = account && account.followsBack === false && control
+          ? current.sessionIndex.get(account.handle) || null
+          : null;
+        syncMilestoneMarker(cell, milestoneIndex, control);
       }
 
       if (changed) {
@@ -445,6 +591,8 @@
         storageFailureMode: restoreError ? 'read' : '',
         structureHealth: { failureRounds: 0, shouldPause: false },
         processedSignatures: new WeakMap(),
+        nextDiscoveryStamp: 0,
+        sessionIndex: new Map(),
         observedMain: null,
         cellObserver: null,
         scanTimer: null,
@@ -543,7 +691,14 @@
     resolveOwnFollowingContext,
     findFollowingControl,
     clearFollowingHighlights,
+    clearMilestoneMarkers,
+    clearPageDecorations,
+    followingControlText,
     syncFollowingHighlight,
+    syncMilestoneMarker,
+    readMilestoneMarker,
+    ensureSessionIndex,
+    nextDiscoveryStamp,
     createStartGate,
     nextStructureHealth,
     createStorageAdapter,

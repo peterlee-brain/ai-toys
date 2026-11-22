@@ -7,11 +7,13 @@
 
 | 项目 | 说明 | 入口 |
 |------|------|------|
-| [keepmark](./keepmark/) | **线上**英文阅读 Chrome 插件 + 后端 API | [keepmark/README.md](./keepmark/README.md) |
+| [web_value](./web_value/) | 股票财报、股本、分红与 K 线展示页面 | [web_value/](./web_value/) |
 | [true-social](./true-social/) | 社媒运营 + K 线采集 | [true-social/docs/](./true-social/docs/) |
-| [x-non-followback](./x-non-followback/) | 只读扫描 X Following 页面并点亮未回关账号的原生已关注按钮 | [x-non-followback/README.md](./x-non-followback/README.md) |
+| [x-non-followback](./x-non-followback/) | 只读扫描 X Following，点亮未回关按钮，并在 Following 按钮左侧逐个标记序号 | [x-non-followback/README.md](./x-non-followback/README.md) |
 
-以后新项目也放这里；文档结构可参考 keepmark 的 `memory-bank/`。
+KeepMark（Chrome 插件 + 学习站）已迁至 [`../keepmark/`](../keepmark/)。
+
+以后新项目也放这里。
 
 ## 根目录是什么
 
@@ -21,7 +23,6 @@ ai-toys/
 ├── GUIDE.md            各文件干啥
 ├── .cursor/rules/      Agent 自动遵守的规范
 ├── docs/vibecoding/    完整 SOP（备查）
-├── keepmark/           真实项目
 └── true-social/        真实项目
 ```
 
@@ -29,10 +30,9 @@ ai-toys/
 
 - **ai-toys 根目录**：通用话术（DEVELOP）+ Agent 规则（`.mdc`）
 - **每个子项目**：自己的代码 + `memory-bank/`（产品、API、架构、进度）
-- 你在 **真实开发 keepmark** 的过程中，顺便练规范的 VibeCoding 流程
 
 ## 纪律
 
 1. 一次只改一个子项目  
-2. 大功能先 `keepmark plan` 再 `keepmark go 1`  
+2. 大功能先 plan 再 go
 3. 改 API/产品前先更新 `memory-bank/` 里对应文档

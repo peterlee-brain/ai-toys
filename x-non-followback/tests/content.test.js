@@ -15,21 +15,80 @@ function createClassList() {
 }
 
 function createFollowingCell(controlTexts) {
-  const controls = controlTexts.map((innerText) => ({
-    innerText,
-    textContent: innerText,
-    classList: createClassList()
-  }));
-  return {
+  const markers = [];
+  const ownerDocument = {
+    createElement(tagName) {
+      const node = {
+        tagName,
+        className: '',
+        textContent: '',
+        attributes: {},
+        nodeType: 1,
+        remove() {
+          const index = markers.indexOf(node);
+          if (index >= 0) markers.splice(index, 1);
+          for (const control of controls) {
+            const childIndex = control.childNodes.indexOf(node);
+            if (childIndex >= 0) control.childNodes.splice(childIndex, 1);
+          }
+        },
+        setAttribute(name, value) {
+          this.attributes[name] = value;
+        }
+      };
+      return node;
+    }
+  };
+  const controls = controlTexts.map((innerText) => {
+    const textNode = { nodeType: 3, textContent: innerText };
+    const control = {
+      innerText,
+      textContent: innerText,
+      classList: createClassList(),
+      ownerDocument,
+      parentNode: null,
+      firstChild: textNode,
+      childNodes: [textNode],
+      insertBefore(node, reference) {
+        const index = this.childNodes.indexOf(reference);
+        if (index >= 0) this.childNodes.splice(index, 0, node);
+        else this.childNodes.unshift(node);
+        this.firstChild = this.childNodes[0] || null;
+        node.parentNode = this;
+        if (!markers.includes(node)) markers.unshift(node);
+        return node;
+      },
+      querySelectorAll(selector) {
+        if (selector === '.x-nfb-milestone') {
+          return this.childNodes.filter((child) => child.className === 'x-nfb-milestone');
+        }
+        if (selector === '.x-nfb-milestone-host') {
+          return this.classList.contains('x-nfb-milestone-host') ? [this] : [];
+        }
+        return [];
+      }
+    };
+    return control;
+  });
+
+  const cell = {
     controls,
+    markers,
+    classList: createClassList(),
+    ownerDocument,
     querySelectorAll(selector) {
       if (selector === 'button,[role="button"]') return controls;
       if (selector === '.x-nfb-following-highlight') {
         return controls.filter((control) => control.classList.contains('x-nfb-following-highlight'));
       }
+      if (selector === '.x-nfb-milestone') return [...markers];
+      if (selector === '.x-nfb-milestone-host') {
+        return controls.filter((control) => control.classList.contains('x-nfb-milestone-host'));
+      }
       return [];
     }
   };
+  return cell;
 }
 
 function createRuntimeCell({ name, handle, followsYou = false, controlText = 'Following' }) {
@@ -112,7 +171,27 @@ function createRuntimeHarness(overrides = {}) {
     querySelectorAll(selector) {
       if (selector === 'main [data-testid="UserCell"]') return this.cells;
       if (selector === '.x-nfb-following-highlight') {
-        return this.cells.flatMap((cell) => cell.querySelectorAll?.(selector) || []);
+        return this.cells.flatMap((cell) => (
+          typeof cell.querySelectorAll === 'function'
+            ? cell.querySelectorAll(selector)
+            : []
+        ));
+      }
+      if (selector === '.x-nfb-milestone-host') {
+        return this.cells.flatMap((cell) => {
+          if (typeof cell.querySelectorAll === 'function') {
+            const nested = cell.querySelectorAll(selector);
+            if (nested.length) return [...nested];
+          }
+          return cell.classList?.contains?.('x-nfb-milestone-host') ? [cell] : [];
+        });
+      }
+      if (selector === '.x-nfb-milestone') {
+        return this.cells.flatMap((cell) => (
+          typeof cell.querySelectorAll === 'function'
+            ? cell.querySelectorAll(selector)
+            : []
+        ));
       }
       throw new Error(`unexpected selector: ${selector}`);
     }
@@ -229,6 +308,73 @@ test('removes stale highlight when a virtual card becomes invalid', () => {
   content.syncFollowingHighlight(cell, null, core);
 
   assert.equal(control.classList.contains('x-nfb-following-highlight'), false);
+});
+
+test('places milestone markers to the left of the Following control', () => {
+  const cell = createFollowingCell(['Following']);
+  const control = cell.controls[0];
+
+  const marker = content.syncMilestoneMarker(cell, 3, control);
+  assert.equal(marker.textContent, '3');
+  assert.equal(control.classList.contains('x-nfb-milestone-host'), true);
+  assert.equal(control.childNodes[0], marker);
+  assert.equal(content.followingControlText(control, core), 'following');
+
+  content.syncMilestoneMarker(cell, null, control);
+  assert.equal(control.classList.contains('x-nfb-milestone-host'), false);
+  assert.equal(cell.markers.length, 0);
+});
+
+test('does not recreate an already correct milestone while scrolling', () => {
+  const cell = createFollowingCell(['Following']);
+  const control = cell.controls[0];
+  const first = content.syncMilestoneMarker(cell, 2, control);
+  const second = content.syncMilestoneMarker(cell, 2, control);
+
+  assert.equal(second, first);
+  assert.equal(cell.markers.length, 1);
+});
+
+test('assigns session indexes from 1 by handle and keeps them stable', () => {
+  const current = { sessionIndex: new Map() };
+  assert.equal(content.ensureSessionIndex(current, { handle: 'a', followsBack: false }), 1);
+  assert.equal(content.ensureSessionIndex(current, { handle: 'b', followsBack: false }), 2);
+  assert.equal(content.ensureSessionIndex(current, { handle: 'a', followsBack: false }), 1);
+  assert.equal(content.ensureSessionIndex(current, { handle: 'c', followsBack: true }), null);
+});
+
+test('runtime numbers only Following non-followbacks so the first marker starts at 1', async () => {
+  const harness = createRuntimeHarness();
+  const suggested = createRuntimeCell({
+    name: 'Suggest',
+    handle: 'suggest',
+    controlText: 'Follow'
+  });
+  const firstFollowing = createRuntimeCell({ name: 'Ada', handle: 'ada' });
+  const secondFollowing = createRuntimeCell({ name: 'Bob', handle: 'bob' });
+  harness.document.cells = [suggested, firstFollowing, secondFollowing];
+
+  await harness.controller.reconcileRoute();
+  await harness.timers.runNextBatch();
+
+  assert.equal(content.readMilestoneMarker(suggested.controls[0]), null);
+  assert.equal(content.readMilestoneMarker(firstFollowing.controls[0])?.textContent, '1');
+  assert.equal(content.readMilestoneMarker(secondFollowing.controls[0])?.textContent, '2');
+  assert.equal(harness.renders.at(-1).state.accounts.suggest.handle, 'suggest');
+});
+
+test('allocates discovery stamps after the newest cached seenAt', () => {
+  const current = {
+    nextDiscoveryStamp: 0,
+    state: {
+      accounts: {
+        older: { handle: 'older', seenAt: 50 }
+      }
+    }
+  };
+
+  assert.equal(content.nextDiscoveryStamp(current, 10), 51);
+  assert.equal(content.nextDiscoveryStamp(current, 10), 52);
 });
 
 test('suppresses repeated starts for an owner until the pending read completes', async () => {

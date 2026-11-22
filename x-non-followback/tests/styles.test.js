@@ -14,3 +14,13 @@ test('following highlight is visible without changing hit area or interaction', 
   assert.match(match[1], /background-color:/);
   assert.doesNotMatch(match[1], /pointer-events|position|transform|width|height/);
 });
+
+test('milestone marker sits to the left of the Following control and never intercepts clicks', () => {
+  const css = fs.readFileSync(path.join(__dirname, '..', 'src', 'styles.css'), 'utf8');
+  const match = css.match(/\.x-nfb-milestone\s*\{([^}]+)\}/);
+  assert.ok(match, 'milestone rule must exist');
+  assert.match(match[1], /pointer-events:\s*none/);
+  assert.match(match[1], /position:\s*absolute/);
+  assert.match(match[1], /right:\s*100%/);
+  assert.match(match[1], /top:\s*50%/);
+});

@@ -91,6 +91,48 @@ test('merges accounts by lowercase handle without mutating prior state', () => {
   assert.equal(merged.updatedAt, 1234);
 });
 
+test('preserves first-seen timestamp when the same handle is merged again', () => {
+  const first = core.mergeAccount({
+    version: 1,
+    ownerHandle: 'owner',
+    accounts: {},
+    updatedAt: 0
+  }, {
+    displayName: 'Ada',
+    handle: 'ada',
+    avatarUrl: '',
+    profileUrl: 'https://x.com/ada',
+    followsBack: false
+  }, 10);
+
+  const second = core.mergeAccount(first, {
+    displayName: 'Ada Updated',
+    handle: 'ada',
+    avatarUrl: '',
+    profileUrl: 'https://x.com/ada',
+    followsBack: false
+  }, 99);
+
+  assert.equal(second.accounts.ada.seenAt, 10);
+  assert.equal(second.accounts.ada.displayName, 'Ada Updated');
+  assert.equal(second.updatedAt, 99);
+});
+
+test('lists non-followback milestones for every discovery by default', () => {
+  const accounts = {
+    first: { handle: 'first', followsBack: false, seenAt: 1 },
+    mutual: { handle: 'mutual', followsBack: true, seenAt: 2 },
+    second: { handle: 'second', followsBack: false, seenAt: 3 }
+  };
+
+  assert.deepEqual(core.listNonFollowbackMilestones(accounts), [
+    { handle: 'first', index: 1 },
+    { handle: 'second', index: 2 }
+  ]);
+  assert.deepEqual(core.listNonFollowbackMilestones(accounts, 10), []);
+  assert.deepEqual(core.listNonFollowbackMilestones(accounts, 0), []);
+});
+
 test('drops cache for another owner or schema version', () => {
   const foreign = {
     version: 1,

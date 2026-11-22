@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "X 未回关按钮高亮",
-  "version": "0.2.0",
-  "description": "只读扫描已加载的 X Following 卡片，并点亮未回关账号的原生已关注按钮。",
+  "version": "0.2.5",
+  "description": "只读扫描已加载的 X Following 卡片，点亮未回关按钮，并在 Following 按钮左侧逐个标记序号。",
   "permissions": [
     "storage"
   ],

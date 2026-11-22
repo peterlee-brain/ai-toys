@@ -4,8 +4,8 @@
 
 - `src/core.js`：纯逻辑。识别 Following 路由、个人资料链接和中英文回关标记；解析卡片快照；校验、合并和筛选缓存状态。
 - `src/panel.js`：保留内部状态 DOM 与既有控制器接口，不读取 X 页面、不访问存储；根节点由 CSS 隐藏，不向用户显示控件。
-- `src/content.js`：验证“自己的 Following 页面”，读取 X 已加载的用户卡片，协调本地存储、扫描生命周期、面板和原生按钮高亮。
-- `src/styles.css`：用 `display: none !important` 隐藏 `#x-non-followback-root`；页面装饰只使用专用 `.x-nfb-following-highlight` 类作用于已识别的原生控件，避免宽泛修改 X 页面。
+- `src/content.js`：验证“自己的 Following 页面”，读取 X 已加载的用户卡片，协调本地存储、扫描生命周期、面板、原生按钮高亮与未回关里程碑序号。
+- `src/styles.css`：用 `display: none !important` 隐藏 `#x-non-followback-root`；页面装饰使用 `.x-nfb-following-highlight` 与按钮旁 `.x-nfb-milestone`，避免宽泛修改 X 页面。
 
 ## 数据流
 
@@ -15,7 +15,7 @@
   → content.js 生成有限快照
   → core.js 解析并按 handle 去重
   → chrome.storage.local 按当前账号保存
-  → content.js 同步未回关账号的原生按钮高亮
+  → content.js 同步未回关账号的原生按钮高亮，并在按钮左侧同步本次会话递增序号
   → panel.js 维护不可见的内部状态 DOM
 ```
 
@@ -29,9 +29,9 @@
 
 ## 页面装饰
 
-每次解析 `UserCell` 时，内容脚本先清除该卡片残留的扩展样式，再根据最新关系结果同步。只有 `followsBack=false` 且控件完整文字精确匹配 `Following / 正在关注 / 已关注 / 正在跟隨 / 跟隨中` 时，才添加 `x-nfb-following-highlight` 类。虚拟节点变成互关账号或暂时无法解析时会移除旧类；暂停、错误停止、清空、主节点替换或离开路由时统一清理。
+每次扫描批次结束后，内容脚本按最新关系结果同步装饰。只有 `followsBack=false` 且控件完整文字精确匹配 `Following / 正在关注 / 已关注 / 正在跟隨 / 跟隨中` 时，才添加 `x-nfb-following-highlight` 类。未回关账号在本次运行时按 DOM 从上到下顺序、以 handle 去重分配 1、2、3…；`x-nfb-milestone` 作为原生控件子节点绝对定位在按钮左侧。已正确的序号节点在滚动复扫时不销毁重建。虚拟节点变成互关账号或暂时无法解析时会移除旧装饰；暂停、错误停止、清空、主节点替换或离开路由时统一清理。
 
-该类只改变颜色、描边和光晕，不注册事件、不移动控件、不扩大点击区域；点击和取关请求仍由 X 原页面处理。
+高亮类只改变颜色、描边和光晕；序号不拦截点击。两者都不注册事件、不改变原生按钮点击区域；取关请求仍由 X 原页面处理。
 
 ## 故障边界
 

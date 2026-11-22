@@ -186,13 +186,15 @@
       return base;
     }
 
+    const existing = base.accounts[handle];
     const nextAccount = {
       displayName: String(account.displayName ?? handle).trim().slice(0, 100) || handle,
       handle,
       avatarUrl: sanitizeAvatarUrl(account.avatarUrl),
       profileUrl: `https://x.com/${handle}`,
       followsBack: account.followsBack,
-      seenAt
+      // Keep first-seen order so milestone numbering stays stable while scrolling.
+      seenAt: existing ? existing.seenAt : seenAt
     };
 
     return {
@@ -217,6 +219,29 @@
       });
   }
 
+  function listNonFollowbacksOldestFirst(accounts) {
+    return listNonFollowbacks(accounts)
+      .slice()
+      .sort((left, right) => {
+        const timeDifference = Number(left.seenAt || 0) - Number(right.seenAt || 0);
+        return timeDifference || String(left.handle).localeCompare(String(right.handle));
+      });
+  }
+
+  function listNonFollowbackMilestones(accounts, interval = 1) {
+    const step = Number(interval);
+    if (!Number.isFinite(step) || step < 1) return [];
+
+    const ordered = listNonFollowbacksOldestFirst(accounts);
+    const milestones = [];
+    for (let index = step; index <= ordered.length; index += step) {
+      const account = ordered[index - 1];
+      if (!account?.handle) continue;
+      milestones.push({ handle: account.handle, index });
+    }
+    return milestones;
+  }
+
   const api = {
     CACHE_VERSION,
     normalizeText,
@@ -226,7 +251,9 @@
     parseUserSnapshot,
     mergeAccount,
     sanitizeCache,
-    listNonFollowbacks
+    listNonFollowbacks,
+    listNonFollowbacksOldestFirst,
+    listNonFollowbackMilestones
   };
 
   global.XNonFollowbackCore = api;
